@@ -61,6 +61,7 @@ func main() {
 				fmt.Fprint(w, "slug = \"%s\"\n", post.Slug)
 				fmt.Fprintln(w, "+++")
 				fmt.Fprint(w, "%s", post.Content)
+				w.Flush()
 				done <- true
 			}(post)
 		}
