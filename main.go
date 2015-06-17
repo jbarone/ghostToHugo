@@ -15,6 +15,7 @@ type Post struct {
 	Slug        string `json:"slug"`
 	Content     string `json:"markdown"`
 	PublishedAt int64  `json:"published_at"`
+	Status      string `json:"status"`
 }
 
 type ExportData struct {
@@ -55,12 +56,13 @@ func main() {
 				w := bufio.NewWriter(postFile)
 
 				fmt.Fprintln(w, "+++")
-				fmt.Fprint(w, "date = \"%s\"\n", time.Unix(0, post.PublishedAt*int64(time.Millisecond)).UTC().String())
-				fmt.Fprintln(w, "draft = false")
-				fmt.Fprint(w, "title = \"%s\"\n", post.Title)
-				fmt.Fprint(w, "slug = \"%s\"\n", post.Slug)
+				fmt.Fprintf(w, "date = \"%s\"\n", time.Unix(0, post.PublishedAt*int64(time.Millisecond)).Format(time.RFC3339))
+				fmt.Fprintf(w, "draft = %t\n", post.Status == "draft")
+				fmt.Fprintf(w, "title = \"%s\"\n", post.Title)
+				fmt.Fprintf(w, "slug = \"%s\"\n", post.Slug)
 				fmt.Fprintln(w, "+++")
-				fmt.Fprint(w, "%s", post.Content)
+				fmt.Fprint(w, post.Content)
+				w.Flush()
 				done <- true
 			}(post)
 		}
