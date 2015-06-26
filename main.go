@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,7 @@ type Post struct {
 	Content     string `json:"markdown"`
 	PublishedAt int64  `json:"published_at"`
 	Status      string `json:"status"`
+	Image       string `json:"image"`
 }
 
 type ExportData struct {
@@ -60,8 +62,14 @@ func main() {
 				fmt.Fprintf(w, "draft = %t\n", post.Status == "draft")
 				fmt.Fprintf(w, "title = \"%s\"\n", post.Title)
 				fmt.Fprintf(w, "slug = \"%s\"\n", post.Slug)
+				if post.Image != "" {
+					fmt.Fprintf(w, "image = \"%s\"\n", stripContentFolder(post.Image))
+				}
+				fmt.Fprintln(w, "aliases = [")
+				fmt.Fprintf(w, "\t\"%s\"\n", post.Slug)
+				fmt.Fprintln(w, "]")
 				fmt.Fprintln(w, "+++")
-				fmt.Fprint(w, post.Content)
+				fmt.Fprint(w, stripContentFolder(post.Content))
 				w.Flush()
 				done <- true
 			}(post)
@@ -71,4 +79,8 @@ func main() {
 			<-done
 		}
 	}
+}
+
+func stripContentFolder(originalString string) string {
+	return strings.Replace(originalString, "/content/", "/", -1)
 }
