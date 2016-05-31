@@ -1,86 +1,73 @@
 package main
 
 import (
-	"bufio"
-	"encoding/json"
+	"flag"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"os"
-	"strings"
+	"sync"
 	"time"
+
+	"github.com/jbarone/ghostToHugo/lib/ghost"
+	"github.com/jbarone/ghostToHugo/lib/hugo"
 )
 
-type Post struct {
-	CreatedAt   int64  `json:"created_at"`
-	Title       string `json:"title"`
-	Slug        string `json:"slug"`
-	Content     string `json:"markdown"`
-	PublishedAt int64  `json:"published_at"`
-	Status      string `json:"status"`
-	Image       string `json:"image"`
-}
-
-type ExportData struct {
-	Posts []Post `json:"posts"`
-}
-
-type ExportEntry struct {
-	Data ExportData `json:"data"`
-}
-
-type Export struct {
-	DB []ExportEntry `json:"db"`
+func usage() {
+	fmt.Printf("Usage: %s [OPTIONS] <Ghost Export>\n", os.Args[0])
+	flag.PrintDefaults()
 }
 
 func main() {
-	output_dir := "./content/posts/"
-	file, e := ioutil.ReadFile("./GhostData.json")
-	if e != nil {
-		fmt.Printf("File error %v\n", e)
-		os.Exit(1)
+
+	var c hugo.Config
+	var l string
+
+	flag.Usage = usage
+
+	flag.StringVar(&c.Path, "hugo", ".", "Path to hugo project")
+	flag.StringVar(&l, "location", "",
+		"Location to use for time conversions (default: local)")
+
+	flag.Parse()
+
+	if len(flag.Args()) == 0 {
+		flag.Usage()
+		os.Exit(0)
 	}
 
-	var export Export
-	json.Unmarshal(file, &export)
-	if len(export.DB) >= 1 {
-		os.MkdirAll(output_dir, 0777)
-		done := make(chan bool)
-
-		for _, post := range export.DB[0].Data.Posts {
-			go func(post Post) {
-				postFile, err := os.Create(output_dir + post.Slug + ".md")
-				if err != nil {
-					fmt.Println(err)
-					os.Exit(1)
-				}
-				defer postFile.Close()
-
-				w := bufio.NewWriter(postFile)
-
-				fmt.Fprintln(w, "+++")
-				fmt.Fprintf(w, "date = \"%s\"\n", time.Unix(0, post.PublishedAt*int64(time.Millisecond)).Format(time.RFC3339))
-				fmt.Fprintf(w, "draft = %t\n", post.Status == "draft")
-				fmt.Fprintf(w, "title = \"%s\"\n", post.Title)
-				fmt.Fprintf(w, "slug = \"%s\"\n", post.Slug)
-				if post.Image != "" {
-					fmt.Fprintf(w, "image = \"%s\"\n", stripContentFolder(post.Image))
-				}
-				fmt.Fprintln(w, "aliases = [")
-				fmt.Fprintf(w, "\t\"%s\"\n", post.Slug)
-				fmt.Fprintln(w, "]")
-				fmt.Fprintln(w, "+++")
-				fmt.Fprint(w, stripContentFolder(post.Content))
-				w.Flush()
-				done <- true
-			}(post)
-		}
-
-		for _ = range export.DB[0].Data.Posts {
-			<-done
-		}
+	if err := hugo.Init(c); err != nil {
+		log.Fatalf("Error initializing Hugo Config (%v)", err)
 	}
-}
 
-func stripContentFolder(originalString string) string {
-	return strings.Replace(originalString, "/content/", "/", -1)
+	if l != "" {
+		location, err := time.LoadLocation(l)
+		if err != nil {
+			log.Fatalf("Error loading location %s: %v", l, err)
+		}
+		ghost.SetLocation(location)
+	}
+
+	file, err := os.Open(flag.Arg(0))
+	if err != nil {
+		log.Fatalf("Error opening export: %v", err)
+	}
+	defer file.Close()
+
+	reader := ghost.ExportReader{file}
+
+	entries, err := ghost.Process(reader)
+	if err != nil {
+		log.Fatalf("Error processing Ghost export: %v", err)
+	}
+
+	var wg sync.WaitGroup
+	for _, entry := range entries {
+		wg.Add(1)
+		go func(data ghost.ExportData) {
+			defer wg.Done()
+			hugo.ExportGhost(&data)
+		}(entry.Data)
+	}
+
+	wg.Wait()
 }
