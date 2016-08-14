@@ -17,18 +17,6 @@ func initLocation() error {
 	return nil
 }
 
-func TestPostIsFeatured(t *testing.T) {
-	for _, d := range boolTestData {
-		p := Post{
-			Featured: json.RawMessage(d.Value),
-		}
-
-		if p.IsFeatured() != d.Want {
-			t.Errorf("Expected: %v Actual: %v", d.Want, p.IsFeatured())
-		}
-	}
-}
-
 func TestPostIsPage(t *testing.T) {
 	for _, d := range boolTestData {
 		p := Post{
@@ -41,45 +29,28 @@ func TestPostIsPage(t *testing.T) {
 	}
 }
 
-func TestPostCreated(t *testing.T) {
-	if err := initLocation(); err != nil {
-		t.Fatalf("%v", err)
-	}
-	p := Post{
-		CreatedAt: 1283780649000,
-	}
-
-	var expected = time.Date(2010, 9, 6, 13, 44, 9, 0, time.UTC)
-	if p.Created() != expected {
-		t.Errorf("Expected: %v Actual: %v", expected, p.Created())
-	}
-}
-
-func TestPostUpdated(t *testing.T) {
-	if err := initLocation(); err != nil {
-		t.Fatalf("%v", err)
-	}
-	p := Post{
-		UpdatedAt: 1286958624000,
-	}
-
-	var expected = time.Date(2010, 10, 13, 8, 30, 24, 0, time.UTC)
-	if p.Updated() != expected {
-		t.Errorf("Expected: %v Actual: %v", expected, p.Updated())
-	}
-}
-
 func TestPostPublished(t *testing.T) {
 	if err := initLocation(); err != nil {
 		t.Fatalf("%v", err)
 	}
-	p := Post{
-		PublishedAt: 1283780649000,
+	var testdata = []struct {
+		format string
+		value  string
+	}{
+		{time.RFC3339, "1283780649000"},
+		{time.RFC3339, `"2010-09-06T13:44:09-00:00"`},
+		{"2006-01-02T15:04:05", `"2010-09-06T13:44:09"`},
+		{"2006-01-02 15:04:05", `"2010-09-06 13:44:09"`},
 	}
 
+	var p Post
 	var expected = time.Date(2010, 9, 6, 13, 44, 9, 0, time.UTC)
-	if p.Published() != expected {
-		t.Errorf("Expected: %v Actual: %v", expected, p.Published())
+	for _, d := range testdata {
+		SetDateFormat(d.format)
+		p.PublishedAt = json.RawMessage(d.value)
+		if p.Published() != expected {
+			t.Errorf("Parsing %q Expected: %v Actual: %v", d.value, expected, p.Published())
+		}
 	}
 }
 
@@ -142,74 +113,6 @@ func TestPostTags(t *testing.T) {
 		t.Errorf("Expected: 1 tag  Actual: %v tag(s)", len(tags))
 	} else if tags[0].ID != tag.ID {
 		t.Errorf("Expected: %v Actual: %v", tag.ID, tags[0].ID)
-	}
-}
-
-func TestUserCreated(t *testing.T) {
-	if err := initLocation(); err != nil {
-		t.Fatalf("%v", err)
-	}
-	u := User{
-		CreatedAt: 1283780649000,
-	}
-
-	var expected = time.Date(2010, 9, 6, 13, 44, 9, 0, time.UTC)
-	if u.Created() != expected {
-		t.Errorf("Expected: %v Actual: %v", expected, u.Created())
-	}
-}
-
-func TestUserUpdated(t *testing.T) {
-	if err := initLocation(); err != nil {
-		t.Fatalf("%v", err)
-	}
-	u := User{
-		UpdatedAt: 1286958624000,
-	}
-
-	var expected = time.Date(2010, 10, 13, 8, 30, 24, 0, time.UTC)
-	if u.Updated() != expected {
-		t.Errorf("Expected: %v Actual: %v", expected, u.Updated())
-	}
-}
-
-func TestTagIsHidden(t *testing.T) {
-	for _, d := range boolTestData {
-		tag := Tag{
-			Hidden: json.RawMessage(d.Value),
-		}
-
-		if tag.IsHidden() != d.Want {
-			t.Errorf("Expected: %v Actual: %v", d.Want, tag.IsHidden())
-		}
-	}
-}
-
-func TestTagCreated(t *testing.T) {
-	if err := initLocation(); err != nil {
-		t.Fatalf("%v", err)
-	}
-	p := Tag{
-		CreatedAt: 1283780649000,
-	}
-
-	var expected = time.Date(2010, 9, 6, 13, 44, 9, 0, time.UTC)
-	if p.Created() != expected {
-		t.Errorf("Expected: %v Actual: %v", expected, p.Created())
-	}
-}
-
-func TestTagUpdated(t *testing.T) {
-	if err := initLocation(); err != nil {
-		t.Fatalf("%v", err)
-	}
-	p := Tag{
-		UpdatedAt: 1286958624000,
-	}
-
-	var expected = time.Date(2010, 10, 13, 8, 30, 24, 0, time.UTC)
-	if p.Updated() != expected {
-		t.Errorf("Expected: %v Actual: %v", expected, p.Updated())
 	}
 }
 
@@ -308,28 +211,19 @@ var exportRecord = ExportEntry{
 				Title:       "my blog post title",
 				Slug:        "my-blog-post-title",
 				Content:     "the *markdown* formatted post body",
-				HTML:        "the <i>html</i> formatted post body",
 				Status:      "published",
-				Language:    "en_US",
 				AuthorID:    1,
-				CreatedAt:   1283780649000,
-				CreatedBy:   1,
-				UpdatedAt:   1286958624000,
-				UpdatedBy:   1,
-				PublishedAt: 1283780649000,
-				PublishedBy: 1,
+				PublishedAt: json.RawMessage("1283780649000"),
 			},
 		},
 		Tags: []Tag{
 			Tag{
 				ID:   3,
 				Name: "Colorado Ho!",
-				Slug: "colorado-ho",
 			},
 			Tag{
 				ID:   4,
 				Name: "blue",
-				Slug: "blue",
 			},
 		},
 		PostTags: []PostTag{
@@ -348,16 +242,8 @@ var exportRecord = ExportEntry{
 		},
 		Users: []User{
 			User{
-				ID:        2,
-				Name:      "user's name",
-				Slug:      "users-name",
-				Email:     "user@example.com",
-				Status:    "active",
-				Language:  "en_US",
-				CreatedAt: 1283780649000,
-				CreatedBy: 1,
-				UpdatedAt: 1286958624000,
-				UpdatedBy: 1,
+				ID:   2,
+				Name: "user's name",
 			},
 		},
 	},

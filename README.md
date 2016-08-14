@@ -18,10 +18,12 @@ this will download, compile, and install `ghostToHugo`
 
 ```
 Usage: ghostToHugo [OPTIONS] <Ghost Export>
+  -dateformat string
+        Date format string to use for time conversions (default: RFC3339)
   -hugo string
-    	Path to hugo project (default ".")
+        Path to hugo project (default ".")
   -location string
-    	Location to use for time conversions (default: local)
+        Location to use for time conversions (default: local)
 ```
 
 At a minimum you need to specify the path to the exported Ghost json file.

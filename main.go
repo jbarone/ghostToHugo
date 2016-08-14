@@ -20,13 +20,15 @@ func usage() {
 func main() {
 
 	var c hugo.Config
-	var l string
+	var l, f string
 
 	flag.Usage = usage
 
 	flag.StringVar(&c.Path, "hugo", ".", "Path to hugo project")
 	flag.StringVar(&l, "location", "",
 		"Location to use for time conversions (default: local)")
+	flag.StringVar(&f, "dateformat", "",
+		"Date format string to use for time conversions (default: RFC3339)")
 
 	flag.Parse()
 
@@ -45,6 +47,10 @@ func main() {
 			log.Fatalf("Error loading location %s: %v", l, err)
 		}
 		ghost.SetLocation(location)
+	}
+
+	if f != "" {
+		ghost.SetDateFormat(f)
 	}
 
 	file, err := os.Open(flag.Arg(0))

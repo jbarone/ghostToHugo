@@ -100,6 +100,7 @@ func getMetadata(post ghost.Post, export *ghost.ExportData) map[string]interface
 	metadata["title"] = post.Title
 	metadata["draft"] = post.IsDraft()
 	metadata["slug"] = post.Slug
+	metadata["description"] = post.MetaDescription
 	if post.Image != "" {
 		metadata["image"] = stripContentFolder(post.Image)
 	}
