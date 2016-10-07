@@ -86,17 +86,18 @@ func writePost(post ghost.Post, export *ghost.ExportData) error {
 	page.SetSourceContent([]byte(post.Content))
 
 	fmt.Println("saving file", name)
-	if err := page.SafeSaveSourceAs(name); err != nil {
-		return err
-	}
-
-	return nil
+	return page.SafeSaveSourceAs(name)
 }
 
 func getMetadata(post ghost.Post, export *ghost.ExportData) map[string]interface{} {
 	metadata := make(map[string]interface{})
 
-	metadata["date"] = post.Published()
+	switch post.IsDraft() {
+	case true:
+		metadata["date"] = post.Created()
+	case false:
+		metadata["date"] = post.Published()
+	}
 	metadata["title"] = post.Title
 	metadata["draft"] = post.IsDraft()
 	metadata["slug"] = post.Slug

@@ -47,6 +47,21 @@ func SetDateFormat(format string) {
 	c.dateformat = format
 }
 
+func parseTime(raw json.RawMessage) time.Time {
+	var pt int64
+	if err := json.Unmarshal(raw, &pt); err == nil {
+		return time.Unix(0, pt*int64(time.Millisecond)).In(c.location)
+	}
+
+	var ps string
+	if err := json.Unmarshal(raw, &ps); err == nil {
+		t, _ := time.ParseInLocation(c.dateformat, ps, c.location)
+		return t
+	}
+
+	return time.Time{}
+}
+
 // Post is a blog post in Ghost
 type Post struct {
 	// id: {type: 'increments', nullable: false, primary: true}
@@ -69,22 +84,18 @@ type Post struct {
 	AuthorID int `json:"author_id"`
 	// published_at: {type: 'dateTime', nullable: true}
 	PublishedAt json.RawMessage `json:"published_at"`
+	// created_at: {type: 'dateTime', nullable: false}
+	CreatedAt json.RawMessage `json:"created_at"`
 }
 
 // Published is the time and date the Post was published
 func (p Post) Published() time.Time {
-	var pt int64
-	if err := json.Unmarshal(p.PublishedAt, &pt); err == nil {
-		return time.Unix(0, pt*int64(time.Millisecond)).In(c.location)
-	}
+	return parseTime(p.PublishedAt)
+}
 
-	var ps string
-	if err := json.Unmarshal(p.PublishedAt, &ps); err == nil {
-		t, _ := time.ParseInLocation(c.dateformat, ps, c.location)
-		return t
-	}
-
-	return time.Time{}
+// Created is the time and date the Post was created
+func (p Post) Created() time.Time {
+	return parseTime(p.CreatedAt)
 }
 
 // IsDraft returns whether or not this Post is a draft (unpublished)

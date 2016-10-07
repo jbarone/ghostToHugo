@@ -12,6 +12,7 @@ import (
 	"github.com/jbarone/ghostToHugo/lib/hugo"
 )
 
+// Print usage information
 func usage() {
 	fmt.Printf("Usage: %s [OPTIONS] <Ghost Export>\n", os.Args[0])
 	flag.PrintDefaults()
