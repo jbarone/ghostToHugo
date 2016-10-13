@@ -56,9 +56,9 @@ func ExportGhost(export *ghost.ExportData) error {
 	var wg sync.WaitGroup
 	for _, post := range export.Posts {
 		wg.Add(1)
-		go func(post ghost.Post) {
+		go func(p ghost.Post) {
 			defer wg.Done()
-			writePost(post, export)
+			writePost(p, export)
 		}(post)
 	}
 
@@ -107,8 +107,8 @@ func getMetadata(post ghost.Post, export *ghost.ExportData) map[string]interface
 	}
 	tags := post.Tags(export)
 	if len(tags) > 0 {
-		metadata["tags"] = tagsToStringSlice(tags)
-		metadata["categories"] = tagsToStringSlice(tags)
+		metadata["tags"] = tagsToSlice(tags)
+		metadata["categories"] = tagsToSlice(tags)
 	}
 	author := post.Author(export)
 	if author != nil {
@@ -118,12 +118,12 @@ func getMetadata(post ghost.Post, export *ghost.ExportData) map[string]interface
 	return metadata
 }
 
-func tagsToStringSlice(tags []ghost.Tag) []string {
+func tagsToSlice(tags []ghost.Tag) []interface{} {
 	if len(tags) == 0 {
 		return nil
 	}
 
-	t := make([]string, len(tags))
+	t := make([]interface{}, len(tags))
 	for i, tag := range tags {
 		t[i] = tag.Name
 	}

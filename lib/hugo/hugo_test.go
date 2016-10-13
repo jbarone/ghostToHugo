@@ -67,7 +67,7 @@ func TestTagsToStringSlice(t *testing.T) {
 	}
 
 	for _, data := range testdata {
-		s := tagsToStringSlice(data.tags)
+		s := tagsToSlice(data.tags)
 		if len(s) != len(data.want) {
 			t.Errorf("Length Mismatch Expected: %v  Actual: %v", len(data.want), len(s))
 			continue
