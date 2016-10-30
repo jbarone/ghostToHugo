@@ -105,7 +105,7 @@ func TestPostTags(t *testing.T) {
 	}
 	data := &ExportData{
 		Tags:     []Tag{tag},
-		PostTags: []PostTag{PostTag{PostID: 1, TagID: 1}},
+		PostTags: []PostTag{{PostID: 1, TagID: 1}},
 	}
 
 	tags := post.Tags(data)
@@ -206,7 +206,7 @@ var exportRecord = ExportEntry{
 	},
 	Data: ExportData{
 		Posts: []Post{
-			Post{
+			{
 				ID:          5,
 				Title:       "my blog post title",
 				Slug:        "my-blog-post-title",
@@ -217,31 +217,31 @@ var exportRecord = ExportEntry{
 			},
 		},
 		Tags: []Tag{
-			Tag{
+			{
 				ID:   3,
 				Name: "Colorado Ho!",
 			},
-			Tag{
+			{
 				ID:   4,
 				Name: "blue",
 			},
 		},
 		PostTags: []PostTag{
-			PostTag{
+			{
 				TagID:  3,
 				PostID: 5,
 			},
-			PostTag{
+			{
 				TagID:  3,
 				PostID: 2,
 			},
-			PostTag{
+			{
 				TagID:  4,
 				PostID: 24,
 			},
 		},
 		Users: []User{
-			User{
+			{
 				ID:   2,
 				Name: "user's name",
 			},

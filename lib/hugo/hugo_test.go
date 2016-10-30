@@ -50,14 +50,14 @@ func TestTagsToStringSlice(t *testing.T) {
 		},
 		{
 			tags: []ghost.Tag{
-				ghost.Tag{Name: "test"},
+				{Name: "test"},
 			},
 			want: []string{"test"},
 		},
 		{
 			tags: []ghost.Tag{
-				ghost.Tag{Name: "test1"},
-				ghost.Tag{Name: "test2"},
+				{Name: "test1"},
+				{Name: "test2"},
 			},
 			want: []string{
 				"test1",
