@@ -1,12 +1,13 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"sync"
 	"time"
+
+	flag "github.com/spf13/pflag"
 
 	"github.com/jbarone/ghostToHugo/lib/ghost"
 	"github.com/jbarone/ghostToHugo/lib/hugo"
@@ -25,10 +26,10 @@ func main() {
 
 	flag.Usage = usage
 
-	flag.StringVar(&c.Path, "hugo", ".", "Path to hugo project")
-	flag.StringVar(&l, "location", "",
+	flag.StringVarP(&c.Path, "hugo", "p", ".", "Path to hugo project")
+	flag.StringVarP(&l, "location", "l", "",
 		"Location to use for time conversions (default: local)")
-	flag.StringVar(&f, "dateformat", "",
+	flag.StringVarP(&f, "dateformat", "f", "",
 		"Date format string to use for time conversions (default: RFC3339)")
 
 	flag.Parse()
