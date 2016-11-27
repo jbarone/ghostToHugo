@@ -48,7 +48,7 @@
         ],
         "users": [
             {
-                "id":           2,
+                "id":           1,
                 "name":         "user's name",
                 "slug":         "users-name",
                 "email":        "user@example.com",
@@ -71,7 +71,7 @@
         ],
         "roles_users": [
             {
-                "user_id": 2,
+                "user_id": 1,
                 "role_id": 3
             }
         ]

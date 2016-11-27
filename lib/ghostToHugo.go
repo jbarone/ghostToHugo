@@ -2,7 +2,6 @@ package ghostToHugo
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"time"
 )
@@ -147,14 +146,9 @@ func stripToken(decoder *json.Decoder) error {
 	return err
 }
 
-func decodeUsers(r io.Reader) ([]user, error) {
-	var decoder = json.NewDecoder(r)
+func decodeUsers(decoder *json.Decoder) ([]user, error) {
 	var users []user
-	err := seekTo(decoder, "users")
-	if err != nil {
-		return users, err
-	}
-	err = stripToken(decoder)
+	err := stripToken(decoder)
 	if err != nil {
 		return users, err
 	}
@@ -170,14 +164,9 @@ func decodeUsers(r io.Reader) ([]user, error) {
 	return users, err
 }
 
-func decodeTags(r io.Reader) ([]tag, error) {
-	var decoder = json.NewDecoder(r)
+func decodeTags(decoder *json.Decoder) ([]tag, error) {
 	var tags []tag
-	err := seekTo(decoder, "tags")
-	if err != nil {
-		return tags, err
-	}
-	err = stripToken(decoder)
+	err := stripToken(decoder)
 	if err != nil {
 		return tags, err
 	}
@@ -193,14 +182,9 @@ func decodeTags(r io.Reader) ([]tag, error) {
 	return tags, err
 }
 
-func decodePostTags(r io.Reader) ([]posttag, error) {
-	var decoder = json.NewDecoder(r)
+func decodePostTags(decoder *json.Decoder) ([]posttag, error) {
 	var posttags []posttag
-	err := seekTo(decoder, "posts_tags")
-	if err != nil {
-		return posttags, err
-	}
-	err = stripToken(decoder)
+	err := stripToken(decoder)
 	if err != nil {
 		return posttags, err
 	}
@@ -208,7 +192,6 @@ func decodePostTags(r io.Reader) ([]posttag, error) {
 		var t posttag
 		err = decoder.Decode(&t)
 		if err != nil {
-			fmt.Println(err)
 			return posttags, err
 		}
 		posttags = append(posttags, t)
@@ -217,17 +200,41 @@ func decodePostTags(r io.Reader) ([]posttag, error) {
 	return posttags, err
 }
 
+func decodeGhostInfo(r io.Reader) (ghostInfo, error) {
+	var gi ghostInfo
+	var decoder = json.NewDecoder(r)
+
+	for {
+		tok, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return gi, err
+		}
+
+		switch tok {
+		case "meta":
+			err = decoder.Decode(&gi.m)
+		case "users":
+			gi.users, err = decodeUsers(decoder)
+		case "tags":
+			gi.tags, err = decodeTags(decoder)
+		case "posts_tags":
+			gi.posttags, err = decodePostTags(decoder)
+		}
+
+		if err != nil {
+			return gi, err
+		}
+	}
+
+	return gi, nil
+}
+
 func (gth *GhostToHugo) importGhost(r io.ReadSeeker) (<-chan Post, error) {
 
-	var decoder = json.NewDecoder(r)
-	var err error
-	var gi ghostInfo
-
-	err = seekTo(decoder, "meta")
-	if err != nil {
-		return nil, err
-	}
-	err = decoder.Decode(&gi.m)
+	gi, err := decodeGhostInfo(r)
 	if err != nil {
 		return nil, err
 	}
@@ -236,34 +243,7 @@ func (gth *GhostToHugo) importGhost(r io.ReadSeeker) (<-chan Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	gi.users, err = decodeUsers(r)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = r.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, err
-	}
-	gi.tags, err = decodeTags(r)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = r.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, err
-	}
-	gi.posttags, err = decodePostTags(r)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = r.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, err
-	}
-	decoder = json.NewDecoder(r)
+	decoder := json.NewDecoder(r)
 	err = seekTo(decoder, "posts")
 	if err != nil {
 		return nil, err
@@ -281,6 +261,7 @@ func (gth *GhostToHugo) importGhost(r io.ReadSeeker) (<-chan Post, error) {
 			if err != nil {
 				break
 			}
+			p.populate(&gi, gth)
 			posts <- p
 		}
 		close(posts)
