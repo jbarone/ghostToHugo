@@ -148,19 +148,7 @@ func stripToken(decoder *json.Decoder) error {
 
 func decodeUsers(decoder *json.Decoder) ([]user, error) {
 	var users []user
-	err := stripToken(decoder)
-	if err != nil {
-		return users, err
-	}
-	for decoder.More() {
-		var u user
-		err = decoder.Decode(&u)
-		if err != nil {
-			return users, err
-		}
-		users = append(users, u)
-	}
-	err = stripToken(decoder)
+	err := decoder.Decode(&users)
 	return users, err
 }
 
