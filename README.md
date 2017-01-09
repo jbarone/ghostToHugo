@@ -27,3 +27,8 @@ Usage: ghostToHugo [OPTIONS] <Ghost Export>
 ```
 
 At a minimum you need to specify the path to the exported Ghost json file.
+
+## Exporting your Ghost content
+You can export your Ghost content (and settings) from the "Labs" section of your Ghost install, which will be at a URL like `<your blog url>/ghost/settings/labs/`.
+
+See this [Ghost support article](https://help.ghost.org/hc/en-us/articles/224112927-Import-Export-Data) for details.
