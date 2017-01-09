@@ -58,7 +58,7 @@ func ExportGhost(export *ghost.ExportData) error {
 		wg.Add(1)
 		go func(p ghost.Post) {
 			defer wg.Done()
-			writePost(p, export)
+			_ = writePost(p, export)
 		}(post)
 	}
 
@@ -72,7 +72,8 @@ func stripContentFolder(originalString string) string {
 
 func writePost(post ghost.Post, export *ghost.ExportData) error {
 	var name = getPath(post)
-	page, err := hugolib.NewPage(name)
+	site := hugolib.NewSiteDefaultLang()
+	page, err := site.NewPage(name)
 	if err != nil {
 		return err
 	}
