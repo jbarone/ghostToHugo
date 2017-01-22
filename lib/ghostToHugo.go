@@ -146,48 +146,6 @@ func stripToken(decoder *json.Decoder) error {
 	return err
 }
 
-func decodeUsers(decoder *json.Decoder) ([]user, error) {
-	var users []user
-	err := decoder.Decode(&users)
-	return users, err
-}
-
-func decodeTags(decoder *json.Decoder) ([]tag, error) {
-	var tags []tag
-	err := stripToken(decoder)
-	if err != nil {
-		return tags, err
-	}
-	for decoder.More() {
-		var t tag
-		err = decoder.Decode(&t)
-		if err != nil {
-			return tags, err
-		}
-		tags = append(tags, t)
-	}
-	err = stripToken(decoder)
-	return tags, err
-}
-
-func decodePostTags(decoder *json.Decoder) ([]posttag, error) {
-	var posttags []posttag
-	err := stripToken(decoder)
-	if err != nil {
-		return posttags, err
-	}
-	for decoder.More() {
-		var t posttag
-		err = decoder.Decode(&t)
-		if err != nil {
-			return posttags, err
-		}
-		posttags = append(posttags, t)
-	}
-	err = stripToken(decoder)
-	return posttags, err
-}
-
 func decodeGhostInfo(r io.Reader) (ghostInfo, error) {
 	var gi ghostInfo
 	var decoder = json.NewDecoder(r)
@@ -205,11 +163,11 @@ func decodeGhostInfo(r io.Reader) (ghostInfo, error) {
 		case "meta":
 			err = decoder.Decode(&gi.m)
 		case "users":
-			gi.users, err = decodeUsers(decoder)
+			err = decoder.Decode(&gi.users)
 		case "tags":
-			gi.tags, err = decodeTags(decoder)
+			err = decoder.Decode(&gi.tags)
 		case "posts_tags":
-			gi.posttags, err = decodePostTags(decoder)
+			err = decoder.Decode(&gi.posttags)
 		}
 
 		if err != nil {
