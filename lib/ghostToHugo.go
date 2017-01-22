@@ -141,16 +141,12 @@ func seekTo(d *json.Decoder, token json.Token) error {
 	return err
 }
 
-func stripToken(decoder *json.Decoder) error {
-	_, err := decoder.Token() // read in delim
-	return err
-}
-
 func decodeGhostInfo(r io.Reader) (ghostInfo, error) {
 	var gi ghostInfo
 	var decoder = json.NewDecoder(r)
+	var doneCount int
 
-	for {
+	for doneCount < 4 {
 		tok, err := decoder.Token()
 		if err == io.EOF {
 			break
@@ -162,12 +158,16 @@ func decodeGhostInfo(r io.Reader) (ghostInfo, error) {
 		switch tok {
 		case "meta":
 			err = decoder.Decode(&gi.m)
+			doneCount++
 		case "users":
 			err = decoder.Decode(&gi.users)
+			doneCount++
 		case "tags":
 			err = decoder.Decode(&gi.tags)
+			doneCount++
 		case "posts_tags":
 			err = decoder.Decode(&gi.posttags)
+			doneCount++
 		}
 
 		if err != nil {
@@ -194,7 +194,7 @@ func (gth *GhostToHugo) importGhost(r io.ReadSeeker) (<-chan Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = stripToken(decoder)
+	_, err = decoder.Token() // Strip Token
 	if err != nil {
 		return nil, err
 	}
