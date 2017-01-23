@@ -2,8 +2,20 @@ package ghostToHugo
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"log"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"sync"
 	"time"
+
+	"github.com/spf13/hugo/helpers"
+	"github.com/spf13/hugo/hugolib"
+	"github.com/spf13/hugo/parser"
+	"github.com/spf13/viper"
 )
 
 // GhostToHugo handles the imprt of a Ghot blog export and outputting to
@@ -11,6 +23,7 @@ import (
 type GhostToHugo struct {
 	location   *time.Location
 	dateformat string
+	path       string
 }
 
 // Post is a blog post in Ghost
@@ -117,19 +130,52 @@ func WithDateFormat(format string) func(*GhostToHugo) {
 	}
 }
 
+// WithHugoPath sets the path to the hugo project being written too
+func WithHugoPath(path string) func(*GhostToHugo) {
+	return func(gth *GhostToHugo) {
+		gth.path = path
+		viper.AddConfigPath(path)
+	}
+}
+
 // NewGhostToHugo returns a new instance of GhostToHugo
 func NewGhostToHugo(options ...func(*GhostToHugo)) (*GhostToHugo, error) {
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("hugo")
 	gth := new(GhostToHugo)
 
 	// set defaults
 	gth.dateformat = time.RFC3339
 	gth.location = time.Local
+	gth.path = "."
 
 	for _, option := range options {
 		option(gth)
 	}
+	err := viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigParseError); ok {
+			return nil, err
+		}
+		return nil, fmt.Errorf("Unable to locate Config file. Perhaps you need to create a new site. (%s)\n", err)
+	}
+	viper.SetDefault("MetaDataFormat", "toml")
+	viper.SetDefault("ContentDir", filepath.Join(gth.path, "content"))
+	viper.SetDefault("LayoutDir", "layouts")
+	viper.SetDefault("StaticDir", "static")
+	viper.SetDefault("ArchetypeDir", "archetypes")
+	viper.SetDefault("PublishDir", "public")
+	viper.SetDefault("DataDir", "data")
+	viper.SetDefault("ThemesDir", "themes")
+	viper.SetDefault("DefaultLayout", "post")
+	viper.SetDefault("Verbose", false)
+	viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "categories"})
 
 	return gth, nil
+}
+
+func stripContentFolder(originalString string) string {
+	return strings.Replace(originalString, "/content/", "/", -1)
 }
 
 func seekTo(d *json.Decoder, token json.Token) error {
@@ -232,4 +278,91 @@ func (gth *GhostToHugo) parseTime(raw json.RawMessage) time.Time {
 	}
 
 	return time.Time{}
+}
+
+func (p Post) getPath() string {
+	if p.IsPage {
+		return helpers.AbsPathify(
+			path.Join(viper.GetString("contentDir"), p.Slug+".md"))
+	}
+
+	return helpers.AbsPathify(
+		path.Join(viper.GetString("contentDir"), "post", p.Slug+".md"))
+}
+
+func (p Post) getMetadata() map[string]interface{} {
+	metadata := make(map[string]interface{})
+
+	switch p.IsDraft {
+	case true:
+		metadata["date"] = p.Created
+	case false:
+		metadata["date"] = p.Published
+	}
+	metadata["title"] = p.Title
+	metadata["draft"] = p.IsDraft
+	metadata["slug"] = p.Slug
+	metadata["description"] = p.MetaDescription
+	if p.Image != "" {
+		metadata["image"] = stripContentFolder(p.Image)
+	}
+	if len(p.Tags) > 0 {
+		metadata["tags"] = p.Tags
+		metadata["categories"] = p.Tags
+	}
+	if p.Author != "" {
+		metadata["author"] = p.Author
+	}
+
+	return metadata
+}
+
+func (gth *GhostToHugo) exportPosts(posts <-chan Post) {
+	throttle := make(chan struct{}, 500)
+	var wg sync.WaitGroup
+	var site = hugolib.NewSiteDefaultLang()
+	for post := range posts {
+		wg.Add(1)
+		go func(p Post) {
+			throttle <- struct{}{}
+			defer func() { <-throttle }()
+			defer wg.Done()
+			var name = p.getPath()
+			// log.Println("saving file", name)
+			page, err := site.NewPage(name)
+			if err != nil {
+				fmt.Printf("ERROR writing %s: %v\n", name, err)
+				return
+			}
+			err = page.SetSourceMetaData(
+				p.getMetadata(),
+				parser.FormatToLeadRune(viper.GetString("MetaDataFormat")))
+			if err != nil {
+				fmt.Printf("ERROR writing %s: %v\n", name, err)
+				return
+			}
+			page.SetSourceContent([]byte(p.Content))
+			err = page.SafeSaveSourceAs(name)
+			if err != nil {
+				fmt.Printf("ERROR writing %s: %v\n", name, err)
+				return
+			}
+		}(post)
+	}
+	wg.Wait()
+}
+
+func (gth *GhostToHugo) Export(path string) {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("Error opening export: %v", err)
+	}
+	defer file.Close()
+
+	posts, err := gth.importGhost(file)
+	if err != nil {
+		log.Fatalf("Error processing Ghost export: %v", err)
+	}
+
+	gth.exportPosts(posts)
 }

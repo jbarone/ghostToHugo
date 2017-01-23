@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	flag "github.com/spf13/pflag"
 
-	"github.com/jbarone/ghostToHugo/lib/ghost"
-	"github.com/jbarone/ghostToHugo/lib/hugo"
+	ghostToHugo "github.com/jbarone/ghostToHugo/lib"
 )
 
 // Print usage information
@@ -21,15 +19,14 @@ func usage() {
 
 func main() {
 
-	var c hugo.Config
-	var l, f string
+	var path, loc, format string
 
 	flag.Usage = usage
 
-	flag.StringVarP(&c.Path, "hugo", "p", ".", "Path to hugo project")
-	flag.StringVarP(&l, "location", "l", "",
+	flag.StringVarP(&path, "hugo", "p", ".", "Path to hugo project")
+	flag.StringVarP(&loc, "location", "l", "",
 		"Location to use for time conversions (default: local)")
-	flag.StringVarP(&f, "dateformat", "f", "",
+	flag.StringVarP(&format, "dateformat", "f", "",
 		"Date format string to use for time conversions (default: RFC3339)")
 
 	flag.Parse()
@@ -39,43 +36,25 @@ func main() {
 		os.Exit(0)
 	}
 
-	if err := hugo.Init(c); err != nil {
-		log.Fatalf("Error initializing Hugo Config (%v)", err)
+	opts := []func(*ghostToHugo.GhostToHugo){
+		ghostToHugo.WithHugoPath(path),
 	}
-
-	if l != "" {
-		location, err := time.LoadLocation(l)
+	if loc != "" {
+		location, err := time.LoadLocation(loc)
 		if err != nil {
-			log.Fatalf("Error loading location %s: %v", l, err)
+			log.Fatalf("Error loading location %s: %v", loc, err)
 		}
-		ghost.SetLocation(location)
+		opts = append(opts, ghostToHugo.WithLocation(location))
 	}
 
-	if f != "" {
-		ghost.SetDateFormat(f)
+	if format != "" {
+		opts = append(opts, ghostToHugo.WithDateFormat(format))
 	}
 
-	file, err := os.Open(flag.Arg(0))
+	gth, err := ghostToHugo.NewGhostToHugo(opts...)
 	if err != nil {
-		log.Fatalf("Error opening export: %v", err)
-	}
-	defer file.Close()
-
-	reader := ghost.ExportReader{file}
-
-	entries, err := ghost.Process(reader)
-	if err != nil {
-		log.Fatalf("Error processing Ghost export: %v", err)
+		log.Fatalf("Error initializing converter (%v)", err)
 	}
 
-	var wg sync.WaitGroup
-	for _, entry := range entries {
-		wg.Add(1)
-		go func(data ghost.ExportData) {
-			defer wg.Done()
-			hugo.ExportGhost(&data)
-		}(entry.Data)
-	}
-
-	wg.Wait()
+	gth.Export(flag.Arg(0))
 }
