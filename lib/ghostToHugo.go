@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -280,7 +281,7 @@ func (gth *GhostToHugo) parseTime(raw json.RawMessage) time.Time {
 	return time.Time{}
 }
 
-func (p Post) getPath() string {
+func (p Post) path() string {
 	if p.IsPage {
 		return helpers.AbsPathify(
 			path.Join(viper.GetString("contentDir"), p.Slug+".md"))
@@ -290,7 +291,7 @@ func (p Post) getPath() string {
 		path.Join(viper.GetString("contentDir"), "post", p.Slug+".md"))
 }
 
-func (p Post) getMetadata() map[string]interface{} {
+func (p Post) metadata() map[string]interface{} {
 	metadata := make(map[string]interface{})
 
 	switch p.IsDraft {
@@ -318,7 +319,7 @@ func (p Post) getMetadata() map[string]interface{} {
 }
 
 func (gth *GhostToHugo) exportPosts(posts <-chan Post) {
-	throttle := make(chan struct{}, 500)
+	throttle := make(chan struct{}, goMaxProcs()*5)
 	var wg sync.WaitGroup
 	var site = hugolib.NewSiteDefaultLang()
 	for post := range posts {
@@ -327,15 +328,15 @@ func (gth *GhostToHugo) exportPosts(posts <-chan Post) {
 			throttle <- struct{}{}
 			defer func() { <-throttle }()
 			defer wg.Done()
-			var name = p.getPath()
-			// log.Println("saving file", name)
+			var name = p.path()
+			log.Println("saving file", name)
 			page, err := site.NewPage(name)
 			if err != nil {
 				fmt.Printf("ERROR writing %s: %v\n", name, err)
 				return
 			}
 			err = page.SetSourceMetaData(
-				p.getMetadata(),
+				p.metadata(),
 				parser.FormatToLeadRune(viper.GetString("MetaDataFormat")))
 			if err != nil {
 				fmt.Printf("ERROR writing %s: %v\n", name, err)
@@ -365,4 +366,13 @@ func (gth *GhostToHugo) Export(path string) {
 	}
 
 	gth.exportPosts(posts)
+}
+
+func goMaxProcs() int {
+	if gmp := os.Getenv("GOMAXPROCS"); gmp != "" {
+		if p, err := strconv.Atoi(gmp); err != nil {
+			return p
+		}
+	}
+	return 1
 }
