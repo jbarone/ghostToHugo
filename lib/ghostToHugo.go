@@ -6,72 +6,22 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/spf13/hugo/helpers"
 	"github.com/spf13/hugo/hugolib"
 	"github.com/spf13/hugo/parser"
 	"github.com/spf13/viper"
 )
 
-// GhostToHugo handles the imprt of a Ghot blog export and outputting to
+// GhostToHugo handles the import of a Ghot blog export and outputting to
 // hugo static blog
 type GhostToHugo struct {
 	location   *time.Location
 	dateformat string
 	path       string
-}
-
-// Post is a blog post in Ghost
-type Post struct {
-	ID              int             `json:"id"`
-	Title           string          `json:"title"`
-	Slug            string          `json:"slug"`
-	Content         string          `json:"markdown"`
-	Image           string          `json:"image"`
-	Page            json.RawMessage `json:"page"`
-	Status          string          `json:"status"`
-	MetaDescription string          `json:"meta_description"`
-	AuthorID        int             `json:"author_id"`
-	PublishedAt     json.RawMessage `json:"published_at"`
-	CreatedAt       json.RawMessage `json:"created_at"`
-
-	Published time.Time
-	Created   time.Time
-	IsDraft   bool
-	IsPage    bool
-	Author    string
-	Tags      []string
-}
-
-func (p *Post) populate(gi *ghostInfo, gth *GhostToHugo) {
-	p.Published = gth.parseTime(p.PublishedAt)
-	p.Created = gth.parseTime(p.CreatedAt)
-	p.IsDraft = p.Status == "draft"
-	p.IsPage = parseBool(p.Page)
-
-	for _, user := range gi.users {
-		if user.ID == p.AuthorID {
-			p.Author = user.Name
-			break
-		}
-	}
-
-	for _, pt := range gi.posttags {
-		if pt.PostID == p.ID {
-			for _, t := range gi.tags {
-				if t.ID == pt.TagID {
-					p.Tags = append(p.Tags, t.Name)
-					break
-				}
-			}
-		}
-	}
 }
 
 func parseBool(rm json.RawMessage) bool {
@@ -86,35 +36,6 @@ func parseBool(rm json.RawMessage) bool {
 	}
 
 	return false
-}
-
-type meta struct {
-	ExportedOn int64  `json:"exported_on"`
-	Version    string `json:"version"`
-}
-
-type user struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-type tag struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-type posttag struct {
-	ID        int `json:"id"`
-	PostID    int `json:"post_id"`
-	TagID     int `json:"tag_id"`
-	SortOrder int `json:"sort_order,omitempty"`
-}
-
-type ghostInfo struct {
-	m        meta
-	users    []user
-	tags     []tag
-	posttags []posttag
 }
 
 // WithLocation sets the location used when working with timestamps
@@ -153,12 +74,14 @@ func NewGhostToHugo(options ...func(*GhostToHugo)) (*GhostToHugo, error) {
 	for _, option := range options {
 		option(gth)
 	}
+
+	viper.AddConfigPath(gth.path)
 	err := viper.ReadInConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigParseError); ok {
 			return nil, err
 		}
-		return nil, fmt.Errorf("Unable to locate Config file. Perhaps you need to create a new site. (%s)\n", err)
+		return nil, fmt.Errorf("Unable to locate Config file. Perhaps you need to create a new site. (%v)", err)
 	}
 	viper.SetDefault("MetaDataFormat", "toml")
 	viper.SetDefault("ContentDir", filepath.Join(gth.path, "content"))
@@ -175,10 +98,6 @@ func NewGhostToHugo(options ...func(*GhostToHugo)) (*GhostToHugo, error) {
 	return gth, nil
 }
 
-func stripContentFolder(originalString string) string {
-	return strings.Replace(originalString, "/content/", "/", -1)
-}
-
 func seekTo(d *json.Decoder, token json.Token) error {
 	var tok json.Token
 	var err error
@@ -188,44 +107,7 @@ func seekTo(d *json.Decoder, token json.Token) error {
 	return err
 }
 
-func decodeGhostInfo(r io.Reader) (ghostInfo, error) {
-	var gi ghostInfo
-	var decoder = json.NewDecoder(r)
-	var doneCount int
-
-	for doneCount < 4 {
-		tok, err := decoder.Token()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return gi, err
-		}
-
-		switch tok {
-		case "meta":
-			err = decoder.Decode(&gi.m)
-			doneCount++
-		case "users":
-			err = decoder.Decode(&gi.users)
-			doneCount++
-		case "tags":
-			err = decoder.Decode(&gi.tags)
-			doneCount++
-		case "posts_tags":
-			err = decoder.Decode(&gi.posttags)
-			doneCount++
-		}
-
-		if err != nil {
-			return gi, err
-		}
-	}
-
-	return gi, nil
-}
-
-func (gth *GhostToHugo) importGhost(r io.ReadSeeker) (<-chan Post, error) {
+func (gth *GhostToHugo) importGhost(r io.ReadSeeker) (<-chan post, error) {
 
 	gi, err := decodeGhostInfo(r)
 	if err != nil {
@@ -246,10 +128,10 @@ func (gth *GhostToHugo) importGhost(r io.ReadSeeker) (<-chan Post, error) {
 		return nil, err
 	}
 
-	posts := make(chan Post)
-	go func(decoder *json.Decoder, posts chan Post) {
+	posts := make(chan post)
+	go func(decoder *json.Decoder, posts chan post) {
 		for decoder.More() {
-			var p Post
+			var p post
 			err = decoder.Decode(&p)
 			if err != nil {
 				break
@@ -281,50 +163,13 @@ func (gth *GhostToHugo) parseTime(raw json.RawMessage) time.Time {
 	return time.Time{}
 }
 
-func (p Post) path() string {
-	if p.IsPage {
-		return helpers.AbsPathify(
-			path.Join(viper.GetString("contentDir"), p.Slug+".md"))
-	}
-
-	return helpers.AbsPathify(
-		path.Join(viper.GetString("contentDir"), "post", p.Slug+".md"))
-}
-
-func (p Post) metadata() map[string]interface{} {
-	metadata := make(map[string]interface{})
-
-	switch p.IsDraft {
-	case true:
-		metadata["date"] = p.Created
-	case false:
-		metadata["date"] = p.Published
-	}
-	metadata["title"] = p.Title
-	metadata["draft"] = p.IsDraft
-	metadata["slug"] = p.Slug
-	metadata["description"] = p.MetaDescription
-	if p.Image != "" {
-		metadata["image"] = stripContentFolder(p.Image)
-	}
-	if len(p.Tags) > 0 {
-		metadata["tags"] = p.Tags
-		metadata["categories"] = p.Tags
-	}
-	if p.Author != "" {
-		metadata["author"] = p.Author
-	}
-
-	return metadata
-}
-
-func (gth *GhostToHugo) exportPosts(posts <-chan Post) {
+func (gth *GhostToHugo) exportPosts(posts <-chan post) {
 	throttle := make(chan struct{}, goMaxProcs()*5)
 	var wg sync.WaitGroup
 	var site = hugolib.NewSiteDefaultLang()
-	for post := range posts {
+	for p := range posts {
 		wg.Add(1)
-		go func(p Post) {
+		go func(p post) {
 			throttle <- struct{}{}
 			defer func() { <-throttle }()
 			defer wg.Done()
@@ -348,7 +193,7 @@ func (gth *GhostToHugo) exportPosts(posts <-chan Post) {
 				fmt.Printf("ERROR writing %s: %v\n", name, err)
 				return
 			}
-		}(post)
+		}(p)
 	}
 	wg.Wait()
 }

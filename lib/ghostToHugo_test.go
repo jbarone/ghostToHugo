@@ -2,14 +2,61 @@ package ghostToHugo
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/spf13/afero"
+	"github.com/spf13/hugo/hugofs"
+	"github.com/spf13/viper"
 )
 
+func testCommonResetState() {
+	// jww.SetStdoutThreshold(jww.LevelDebug)
+	hugofs.InitMemFs()
+	viper.Reset()
+	viper.AddConfigPath("/")
+	viper.SetFs(hugofs.Source())
+
+	// Default is false, but true is easier to use as default in tests
+	viper.Set("defaultContentLanguageInSubdir", true)
+
+	if err := hugofs.Source().Mkdir("content", 0755); err != nil {
+		panic("Content folder creation failed.")
+	}
+
+	if err := afero.WriteFile(hugofs.Source(), "/config.toml", []byte(`
+baseurl = "http://replace-this-with-your-hugo-site.com/"
+title = "My New Hugo Site"
+languageCode = "en-us"`), 0755); err != nil {
+		panic("Error creating config")
+	}
+}
+
+func readFileFromFs(t *testing.T, fs afero.Fs, filename string) string {
+	filename = filepath.FromSlash(filename)
+	b, err := afero.ReadFile(fs, filename)
+	if err != nil {
+		// Print some debug info
+		root := strings.Split(filename, "/")[0]
+		afero.Walk(fs, root, func(path string, info os.FileInfo, err error) error {
+			if info != nil && !info.IsDir() {
+				fmt.Println("    ", path)
+			}
+
+			return nil
+		})
+		t.Fatalf("Failed to read file: %s", err)
+	}
+	return string(b)
+}
+
 func TestParseTime(t *testing.T) {
+	testCommonResetState()
 	location, err := time.LoadLocation("UTC")
 	if err != nil {
 		t.Fatal(err)
@@ -45,6 +92,7 @@ func TestParseTime(t *testing.T) {
 }
 
 func TestImportGhost(t *testing.T) {
+	testCommonResetState()
 	data := []string{
 		"wrapped.json",
 		"unwrapped.json",
@@ -80,7 +128,7 @@ func TestImportGhost(t *testing.T) {
 	}
 }
 
-var expectedPost = Post{
+var expectedPost = post{
 	ID:              5,
 	Title:           "my blog post title",
 	Slug:            "my-blog-post-title",
