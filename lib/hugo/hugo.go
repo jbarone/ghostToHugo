@@ -72,7 +72,10 @@ func stripContentFolder(originalString string) string {
 
 func writePost(post ghost.Post, export *ghost.ExportData) error {
 	var name = getPath(post)
-	site := hugolib.NewSiteDefaultLang()
+	site, err := hugolib.NewSiteDefaultLang()
+	if err != nil {
+		return nil
+	}
 	page, err := site.NewPage(name)
 	if err != nil {
 		return err
