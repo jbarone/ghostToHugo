@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/jbarone/ghostToHugo/lib/ghost"
-	"github.com/spf13/hugo/helpers"
 	"github.com/spf13/hugo/hugolib"
 	"github.com/spf13/hugo/parser"
 	"github.com/spf13/viper"
@@ -71,11 +70,13 @@ func stripContentFolder(originalString string) string {
 }
 
 func writePost(post ghost.Post, export *ghost.ExportData) error {
-	var name = getPath(post)
 	site, err := hugolib.NewSiteDefaultLang()
 	if err != nil {
 		return nil
 	}
+
+	var name = getPath(site, post)
+
 	page, err := site.NewPage(name)
 	if err != nil {
 		return err
@@ -135,12 +136,12 @@ func tagsToSlice(tags []ghost.Tag) []interface{} {
 	return t
 }
 
-func getPath(post ghost.Post) string {
+func getPath(site *hugolib.Site, post ghost.Post) string {
 	if post.IsPage() {
-		return helpers.AbsPathify(
+		return site.PathSpec.AbsPathify(
 			path.Join(viper.GetString("contentDir"), post.Slug+".md"))
 	}
 
-	return helpers.AbsPathify(
+	return site.PathSpec.AbsPathify(
 		path.Join(viper.GetString("contentDir"), "post", post.Slug+".md"))
 }
