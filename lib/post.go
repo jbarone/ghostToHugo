@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/hugo/helpers"
+	"github.com/spf13/hugo/hugolib"
 	"github.com/spf13/viper"
 )
 
@@ -56,13 +56,13 @@ func (p *post) populate(gi *ghostInfo, gth *GhostToHugo) {
 	}
 }
 
-func (p post) path() string {
+func (p post) path(site *hugolib.Site) string {
 	if p.IsPage {
-		return helpers.AbsPathify(
+		return site.PathSpec.AbsPathify(
 			path.Join(viper.GetString("contentDir"), p.Slug+".md"))
 	}
 
-	return helpers.AbsPathify(
+	return site.PathSpec.AbsPathify(
 		path.Join(viper.GetString("contentDir"), "post", p.Slug+".md"))
 }
 

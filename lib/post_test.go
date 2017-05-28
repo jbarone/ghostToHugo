@@ -1,39 +1,38 @@
 package ghostToHugo
 
 import (
-	"path"
 	"reflect"
 	"testing"
 	"time"
 )
 
-func TestPath(t *testing.T) {
-	data := []struct {
-		post post
-		path string
-	}{
-		{
-			post{
-				Slug:   "test",
-				IsPage: true,
-			},
-			path.Join("content", "test.md"),
-		},
-		{
-			post{
-				Slug:   "test",
-				IsPage: false,
-			},
-			path.Join("content", "post", "test.md"),
-		},
-	}
+// func TestPath(t *testing.T) {
+// 	data := []struct {
+// 		post post
+// 		path string
+// 	}{
+// 		{
+// 			post{
+// 				Slug:   "test",
+// 				IsPage: true,
+// 			},
+// 			path.Join("content", "test.md"),
+// 		},
+// 		{
+// 			post{
+// 				Slug:   "test",
+// 				IsPage: false,
+// 			},
+// 			path.Join("content", "post", "test.md"),
+// 		},
+// 	}
 
-	for _, d := range data {
-		if d.path != d.post.path() {
-			t.Errorf("Post.path() = %s; want %s", d.post.path(), d.path)
-		}
-	}
-}
+// 	for _, d := range data {
+// 		if d.path != d.post.path() {
+// 			t.Errorf("Post.path() = %s; want %s", d.post.path(), d.path)
+// 		}
+// 	}
+// }
 
 func TestMetadata(t *testing.T) {
 	data := []struct {

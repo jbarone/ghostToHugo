@@ -17,19 +17,20 @@ import (
 
 func testCommonResetState() {
 	// jww.SetStdoutThreshold(jww.LevelDebug)
-	hugofs.InitMemFs()
+	v := viper.New()
+	fs := hugofs.NewMem(v)
 	viper.Reset()
 	viper.AddConfigPath("/")
-	viper.SetFs(hugofs.Source())
+	viper.SetFs(fs.Source)
 
 	// Default is false, but true is easier to use as default in tests
 	viper.Set("defaultContentLanguageInSubdir", true)
 
-	if err := hugofs.Source().Mkdir("content", 0755); err != nil {
+	if err := fs.Source.Mkdir("content", 0755); err != nil {
 		panic("Content folder creation failed.")
 	}
 
-	if err := afero.WriteFile(hugofs.Source(), "/config.toml", []byte(`
+	if err := afero.WriteFile(fs.Source, "/config.toml", []byte(`
 baseurl = "http://replace-this-with-your-hugo-site.com/"
 title = "My New Hugo Site"
 languageCode = "en-us"`), 0755); err != nil {

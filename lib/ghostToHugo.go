@@ -166,14 +166,18 @@ func (gth *GhostToHugo) parseTime(raw json.RawMessage) time.Time {
 func (gth *GhostToHugo) exportPosts(posts <-chan post) {
 	throttle := make(chan struct{}, goMaxProcs()*5)
 	var wg sync.WaitGroup
-	var site = hugolib.NewSiteDefaultLang()
+	site, err := hugolib.NewSiteDefaultLang()
+	if err != nil {
+		fmt.Printf("ERROR getting site: %v\n", err)
+		return
+	}
 	for p := range posts {
 		wg.Add(1)
 		go func(p post) {
 			throttle <- struct{}{}
 			defer func() { <-throttle }()
 			defer wg.Done()
-			var name = p.path()
+			var name = p.path(site)
 			log.Println("saving file", name)
 			page, err := site.NewPage(name)
 			if err != nil {
