@@ -9,7 +9,7 @@ The project is written in Go, and currently will require building from source.
 Make sure you have Go installed and configured, then just run:
 
 ```
-go get github.com/jbarone/ghostToHugo
+go get -u github.com/jbarone/ghostToHugo
 ```
 
 this will download, compile, and install `ghostToHugo`
@@ -18,15 +18,38 @@ this will download, compile, and install `ghostToHugo`
 
 ```
 Usage: ghostToHugo [OPTIONS] <Ghost Export>
-  -dateformat string
-        Date format string to use for time conversions (default: RFC3339)
-  -hugo string
-        Path to hugo project (default ".")
-  -location string
-        Location to use for time conversions (default: local)
+  -f, --dateformat string   Date format string to use for time conversions (default: RFC3339)
+  -p, --hugo string         Path to hugo project (default ".")
+  -l, --location string     Location to use for time conversions (default: local)
 ```
 
 At a minimum you need to specify the path to the exported Ghost json file.
+
+NOTES: 
+
+- The `dateformat` string should be provided in Go's time format string. Reference [here](https://golang.org/src/time/format.go)
+- The `location` string should be a value that matches the IANA Time Zone database, such as "America/New_York"
+
+### Examples
+
+```
+$ ghostToHugo export.json
+```
+
+```
+$ ghostToHugo --hugo ~/mysite export.json
+$ ghostToHugo -p ~/mysite export.json
+```
+
+```
+$ ghostToHugo --dateformat "2006-01-02 15:04:05" export.json
+$ ghostToHugo -f "2006-01-02 15:04:05" export.json
+```
+
+```
+$ ghostToHugo --location "America/Chicago" export.json
+$ ghostToHugo -l "America/Chicago" export.json
+```
 
 ## Exporting your Ghost content
 You can export your Ghost content (and settings) from the "Labs" section of your Ghost install, which will be at a URL like `<your blog url>/ghost/settings/labs/`.
