@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gohugoio/hugo/hugofs"
 	"github.com/spf13/afero"
-	"github.com/spf13/hugo/hugofs"
 	"github.com/spf13/viper"
 )
 
