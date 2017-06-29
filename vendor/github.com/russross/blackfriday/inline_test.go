@@ -15,9 +15,8 @@ package blackfriday
 
 import (
 	"regexp"
-	"testing"
-
 	"strings"
+	"testing"
 )
 
 func runMarkdownInline(input string, opts Options, htmlFlags int, params HtmlRendererParameters) string {
@@ -60,13 +59,11 @@ func doTestsInlineParam(t *testing.T, tests []string, opts Options, htmlFlags in
 	params HtmlRendererParameters) {
 	// catch and report panics
 	var candidate string
-	/*
-		defer func() {
-			if err := recover(); err != nil {
-				t.Errorf("\npanic while processing [%#v] (%v)\n", candidate, err)
-			}
-		}()
-	*/
+	defer func() {
+		if err := recover(); err != nil {
+			t.Errorf("\npanic while processing [%#v]: %s\n", candidate, err)
+		}
+	}()
 
 	for i := 0; i+1 < len(tests); i += 2 {
 		input := tests[i]
@@ -156,8 +153,33 @@ func TestEmphasis(t *testing.T) {
 
 		"*What is A\\* algorithm?*\n",
 		"<p><em>What is A* algorithm?</em></p>\n",
+
+		"some para_graph with _emphasised_ text.\n",
+		"<p>some para_graph with <em>emphasised</em> text.</p>\n",
+
+		"some paragraph with _emphasised_ te_xt.\n",
+		"<p>some paragraph with <em>emphasised</em> te_xt.</p>\n",
+
+		"some paragraph with t_wo bi_ts of _emphasised_ text.\n",
+		"<p>some paragraph with t<em>wo bi</em>ts of <em>emphasised</em> text.</p>\n",
+
+		"un*frigging*believable\n",
+		"<p>un<em>frigging</em>believable</p>\n",
 	}
 	doTestsInline(t, tests)
+}
+
+func TestNoIntraEmphasis(t *testing.T) {
+	tests := []string{
+		"some para_graph with _emphasised_ text.\n",
+		"<p>some para_graph with <em>emphasised</em> text.</p>\n",
+
+		"un*frigging*believable\n",
+		"<p>un*frigging*believable</p>\n",
+	}
+	doTestsInlineParam(t, tests, Options{
+		Extensions: EXTENSION_NO_INTRA_EMPHASIS},
+		0, HtmlRendererParameters{})
 }
 
 func TestReferenceOverride(t *testing.T) {
@@ -541,6 +563,20 @@ func TestInlineLink(t *testing.T) {
 
 		"[link](<../>)\n",
 		"<p><a href=\"../\">link</a></p>\n",
+
+		// Issue 116 in blackfriday
+		"![](http://www.broadgate.co.uk/Content/Upload/DetailImages/Cyclus700(1).jpg)",
+		"<p><img src=\"http://www.broadgate.co.uk/Content/Upload/DetailImages/Cyclus700(1).jpg\" alt=\"\" /></p>\n",
+
+		// no closing ), autolinking detects the url next
+		"[disambiguation](http://en.wikipedia.org/wiki/Disambiguation_(disambiguation) is the",
+		"<p>[disambiguation](<a href=\"http://en.wikipedia.org/wiki/Disambiguation_(disambiguation\">http://en.wikipedia.org/wiki/Disambiguation_(disambiguation</a>) is the</p>\n",
+
+		"[disambiguation](http://en.wikipedia.org/wiki/Disambiguation_(disambiguation)) is the",
+		"<p><a href=\"http://en.wikipedia.org/wiki/Disambiguation_(disambiguation)\">disambiguation</a> is the</p>\n",
+
+		"[disambiguation](http://en.wikipedia.org/wiki/Disambiguation_(disambiguation))",
+		"<p><a href=\"http://en.wikipedia.org/wiki/Disambiguation_(disambiguation)\">disambiguation</a></p>\n",
 	}
 	doLinkTestsInline(t, tests)
 
@@ -681,6 +717,9 @@ func TestReferenceLink(t *testing.T) {
 
 		"[ref]\n   [ref]: ../url/ \"title\"\n",
 		"<p><a href=\"../url/\" title=\"title\">ref</a></p>\n",
+
+		"[link][ref]\n   [ref]: /url/",
+		"<p><a href=\"/url/\">link</a></p>\n",
 	}
 	doLinkTestsInline(t, tests)
 }
@@ -985,6 +1024,28 @@ what happens here
 </ol>
 </div>
 `,
+	`testing footnotes.[^a]
+
+test footnotes the second.[^b]
+
+[^a]: This is the first note[^a].
+[^b]: this is the second note.[^a]
+`,
+	`<p>testing footnotes.<sup class="footnote-ref" id="fnref:a"><a rel="footnote" href="#fn:a">1</a></sup></p>
+
+<p>test footnotes the second.<sup class="footnote-ref" id="fnref:b"><a rel="footnote" href="#fn:b">2</a></sup></p>
+<div class="footnotes">
+
+<hr />
+
+<ol>
+<li id="fn:a">This is the first note<sup class="footnote-ref" id="fnref:a"><a rel="footnote" href="#fn:a">1</a></sup>.
+</li>
+<li id="fn:b">this is the second note.<sup class="footnote-ref" id="fnref:a"><a rel="footnote" href="#fn:a">1</a></sup>
+</li>
+</ol>
+</div>
+`,
 }
 
 func TestFootnotes(t *testing.T) {
@@ -1034,6 +1095,34 @@ func TestNestedFootnotes(t *testing.T) {
 <li id="fn:fn1">Asterisk<sup class="footnote-ref" id="fnref:fn2"><a rel="footnote" href="#fn:fn2">2</a></sup>
 </li>
 <li id="fn:fn2">Obelisk
+</li>
+</ol>
+</div>
+`,
+		`This uses footnote A.[^A]
+
+This uses footnote C.[^C]
+
+[^A]:
+  A note. use itself.[^A]
+[^B]:
+  B note, uses A to test duplicate.[^A]
+[^C]:
+  C note, uses B.[^B]
+`,
+		`<p>This uses footnote A.<sup class="footnote-ref" id="fnref:A"><a rel="footnote" href="#fn:A">1</a></sup></p>
+
+<p>This uses footnote C.<sup class="footnote-ref" id="fnref:C"><a rel="footnote" href="#fn:C">2</a></sup></p>
+<div class="footnotes">
+
+<hr />
+
+<ol>
+<li id="fn:A">A note. use itself.<sup class="footnote-ref" id="fnref:A"><a rel="footnote" href="#fn:A">1</a></sup>
+</li>
+<li id="fn:C">C note, uses B.<sup class="footnote-ref" id="fnref:B"><a rel="footnote" href="#fn:B">3</a></sup>
+</li>
+<li id="fn:B">B note, uses A to test duplicate.<sup class="footnote-ref" id="fnref:A"><a rel="footnote" href="#fn:A">1</a></sup>
 </li>
 </ol>
 </div>

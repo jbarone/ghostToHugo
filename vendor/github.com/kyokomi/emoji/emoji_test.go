@@ -3,16 +3,28 @@ package emoji
 import (
 	"bytes"
 	"fmt"
+	"math"
+	"strings"
+	"sync"
 	"testing"
 )
 
 const (
 	beerKey  = ":beer:"
 	beerText = " ビール!!!"
+	flag     = ":flag-us:"
 )
 
 var testFText = "test " + emojize(beerKey) + beerText
 var testText = emojize(beerKey) + beerText
+
+func TestFlag(t *testing.T) {
+	f := emojize(flag)
+	expected := "\U0001f1fA\U0001f1f8"
+	if f != expected {
+		t.Error("emojize ", f, "!=", expected)
+	}
+}
 
 func TestMultiColons(t *testing.T) {
 	var buf bytes.Buffer
@@ -131,4 +143,87 @@ func TestSprintMulti(t *testing.T) {
 		t.Error("Sprint ", convertBeer, testText)
 	}
 	fmt.Println(convertBeer)
+}
+
+// Copyright 2016 The Hugo Authors. All rights reserved.
+// source: https://github.com/spf13/hugo/blob/master/helpers/emoji_test.go
+
+func BenchmarkFprint(b *testing.B) {
+	f := func(in []byte) []byte {
+		buff := getBuffer()
+		defer putBuffer(buff)
+		Fprint(buff, string(in))
+
+		bc := make([]byte, buff.Len(), buff.Len())
+		copy(bc, buff.Bytes())
+		return bc
+	}
+
+	doBenchmarkEmoji(b, f)
+}
+
+func BenchmarkSprint(b *testing.B) {
+	f := func(in []byte) []byte {
+		return []byte(Sprint(string(in)))
+	}
+
+	doBenchmarkEmoji(b, f)
+}
+
+func doBenchmarkEmoji(b *testing.B, f func(in []byte) []byte) {
+	type input struct {
+		in     []byte
+		expect []byte
+	}
+
+	data := []struct {
+		input  string
+		expect string
+	}{
+		{"A :smile: a day", Sprint("A :smile: a day")},
+		{"A :smile: and a :beer: day keeps the doctor away", Sprint("A :smile: and a :beer: day keeps the doctor away")},
+		{"A :smile: a day and 10 " + strings.Repeat(":beer: ", 10), Sprint("A :smile: a day and 10 " + strings.Repeat(":beer: ", 10))},
+		{"No smiles today.", "No smiles today."},
+		{"No smiles for you or " + strings.Repeat("you ", 1000), "No smiles for you or " + strings.Repeat("you ", 1000)},
+	}
+
+	var in = make([]input, b.N*len(data))
+	var cnt = 0
+	for i := 0; i < b.N; i++ {
+		for _, this := range data {
+			in[cnt] = input{[]byte(this.input), []byte(this.expect)}
+			cnt++
+		}
+	}
+
+	b.ResetTimer()
+	cnt = 0
+	for i := 0; i < b.N; i++ {
+		for j := range data {
+			currIn := in[cnt]
+			cnt++
+			result := f(currIn.in)
+			// The Emoji implementations gives slightly different output.
+			diffLen := len(result) - len(currIn.expect)
+			diffLen = int(math.Abs(float64(diffLen)))
+			if diffLen > 30 {
+				b.Fatalf("[%d] emoji std, got \n%q but expected \n%q", j, result, currIn.expect)
+			}
+		}
+	}
+}
+
+var bufferPool = &sync.Pool{
+	New: func() interface{} {
+		return &bytes.Buffer{}
+	},
+}
+
+func getBuffer() (buf *bytes.Buffer) {
+	return bufferPool.Get().(*bytes.Buffer)
+}
+
+func putBuffer(buf *bytes.Buffer) {
+	buf.Reset()
+	bufferPool.Put(buf)
 }
