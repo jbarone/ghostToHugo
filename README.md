@@ -1,5 +1,10 @@
 # ghostToHugo
 
+[![GitHub release](https://img.shields.io/github/release/tony19/x-user-dropdown.svg)](https://github.com/jbarone/ghostToHugo/releases/latest)
+[![MIT License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](/LICENSE)
+[![Build Status](https://travis-ci.org/jbarone/ghostToHugo.svg?branch=master)](https://travis-ci.org/jbarone/ghostToHugo)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jbarone/ghostToHugo)](https://goreportcard.com/report/github.com/jbarone/ghostToHugo)
+
 **ghostToHugo** is a utility project that was created the allow the conversion
 of an export from the Ghost blogging engine into the Hugo engine.
 
