@@ -1,6 +1,6 @@
 # ghostToHugo
 
-[![GitHub release](https://img.shields.io/github/release/tony19/x-user-dropdown.svg)](https://github.com/jbarone/ghostToHugo/releases/latest)
+[![GitHub release](https://img.shields.io/github/release/jbarone/ghostToHugo.svg)](https://github.com/jbarone/ghostToHugo/releases/latest)
 [![MIT License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](/LICENSE)
 [![Build Status](https://travis-ci.org/jbarone/ghostToHugo.svg?branch=master)](https://travis-ci.org/jbarone/ghostToHugo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jbarone/ghostToHugo)](https://goreportcard.com/report/github.com/jbarone/ghostToHugo)
