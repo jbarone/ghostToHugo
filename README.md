@@ -32,7 +32,7 @@ At a minimum you need to specify the path to the exported Ghost json file.
 
 NOTES: 
 
-- The `dateformat` string should be provided in Go's time format string. Reference [here](https://golang.org/src/time/format.go)
+- The `dateformat` string must be provided in Go's specific time format string. Reference [here](https://gobyexample.com/time-formatting-parsing)
 - The `location` string should be a value that matches the IANA Time Zone database, such as "America/New_York"
 
 ### Examples
