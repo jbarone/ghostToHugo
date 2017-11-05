@@ -2,6 +2,7 @@ package ghostToHugo
 
 import (
 	"bytes"
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -24,38 +25,32 @@ var expected = ghostInfo{
 	},
 	users: []user{
 		{
-			ID:   1,
+			ID:   json.RawMessage("1"),
 			Name: "user's name",
 		},
 	},
 	tags: []tag{
 		{
-			ID:   3,
+			ID:   json.RawMessage("3"),
 			Name: "Colorado Ho!",
 		},
 		{
-			ID:   4,
+			ID:   json.RawMessage("4"),
 			Name: "blue",
 		},
 	},
 	posttags: []posttag{
 		{
-			ID:        0,
-			PostID:    5,
-			TagID:     3,
-			SortOrder: 0,
+			PostID: json.RawMessage("5"),
+			TagID:  json.RawMessage("3"),
 		},
 		{
-			ID:        0,
-			PostID:    2,
-			TagID:     3,
-			SortOrder: 0,
+			PostID: json.RawMessage("2"),
+			TagID:  json.RawMessage("3"),
 		},
 		{
-			ID:        0,
-			PostID:    24,
-			TagID:     4,
-			SortOrder: 0,
+			PostID: json.RawMessage("24"),
+			TagID:  json.RawMessage("4"),
 		},
 	},
 }

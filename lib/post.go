@@ -1,6 +1,7 @@
 package ghostToHugo
 
 import (
+	"bytes"
 	"encoding/json"
 	"path"
 	"strings"
@@ -11,15 +12,16 @@ import (
 )
 
 type post struct {
-	ID              int             `json:"id"`
+	ID              json.RawMessage `json:"id"`
 	Title           string          `json:"title"`
 	Slug            string          `json:"slug"`
 	Content         string          `json:"markdown"`
+	Plain           string          `json:"plaintext"`
 	Image           string          `json:"image"`
 	Page            json.RawMessage `json:"page"`
 	Status          string          `json:"status"`
 	MetaDescription string          `json:"meta_description"`
-	AuthorID        int             `json:"author_id"`
+	AuthorID        json.RawMessage `json:"author_id"`
 	PublishedAt     json.RawMessage `json:"published_at"`
 	CreatedAt       json.RawMessage `json:"created_at"`
 
@@ -38,17 +40,17 @@ func (p *post) populate(gi *ghostInfo, gth *GhostToHugo) {
 	p.IsPage = parseBool(p.Page)
 
 	for _, user := range gi.users {
-		if user.ID == p.AuthorID {
+		if bytes.Equal(user.ID, p.AuthorID) {
 			p.Author = user.Name
 			break
 		}
 	}
 
 	for _, pt := range gi.posttags {
-		if pt.PostID == p.ID {
+		if bytes.Equal(pt.PostID, p.ID) {
 			for _, t := range gi.tags {
-				if t.ID == pt.TagID {
-					p.Tags = append(p.Tags, t.Name)
+				if bytes.Equal(t.ID, pt.TagID) {
+					p.Tags = append(p.Tags, strings.TrimPrefix(t.Name, "#"))
 					break
 				}
 			}

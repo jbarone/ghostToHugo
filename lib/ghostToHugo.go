@@ -191,7 +191,11 @@ func (gth *GhostToHugo) exportPosts(posts <-chan post) {
 				fmt.Printf("ERROR writing %s: %v\n", name, err)
 				return
 			}
-			page.SetSourceContent([]byte(p.Content))
+			if p.Content != "" {
+				page.SetSourceContent([]byte(p.Content))
+			} else {
+				page.SetSourceContent([]byte(p.Plain))
+			}
 			err = page.SafeSaveSourceAs(name)
 			if err != nil {
 				fmt.Printf("ERROR writing %s: %v\n", name, err)

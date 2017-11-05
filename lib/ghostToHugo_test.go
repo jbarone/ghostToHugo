@@ -130,7 +130,7 @@ func TestImportGhost(t *testing.T) {
 }
 
 var expectedPost = post{
-	ID:              5,
+	ID:              json.RawMessage("5"),
 	Title:           "my blog post title",
 	Slug:            "my-blog-post-title",
 	Content:         "the *markdown* formatted post body",
@@ -138,7 +138,7 @@ var expectedPost = post{
 	Page:            json.RawMessage("0"),
 	Status:          "published",
 	MetaDescription: "",
-	AuthorID:        1,
+	AuthorID:        json.RawMessage("1"),
 	PublishedAt:     json.RawMessage("1283780649000"),
 	CreatedAt:       json.RawMessage("1283780649000"),
 

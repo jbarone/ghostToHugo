@@ -11,20 +11,20 @@ type meta struct {
 }
 
 type user struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID   json.RawMessage `json:"id"`
+	Name string          `json:"name"`
 }
 
 type tag struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID   json.RawMessage `json:"id"`
+	Name string          `json:"name"`
 }
 
 type posttag struct {
-	ID        int `json:"id"`
-	PostID    int `json:"post_id"`
-	TagID     int `json:"tag_id"`
-	SortOrder int `json:"sort_order,omitempty"`
+	ID        json.RawMessage `json:"id"`
+	PostID    json.RawMessage `json:"post_id"`
+	TagID     json.RawMessage `json:"tag_id"`
+	SortOrder int             `json:"sort_order,omitempty"`
 }
 
 type ghostInfo struct {
