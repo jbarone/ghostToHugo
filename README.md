@@ -10,6 +10,17 @@ of an export from the Ghost blogging engine into the Hugo engine.
 
 ## Installing
 
+There are 2 options for installation.
+
+### Pre-Build Binaries
+
+With every new versioned release. Binaries are built for most major platforms.
+You can simply download the one for your operating system from the 
+[releases page](https://github.com/jbarone/ghostToHugo/releases/latest). Unzip
+the package and place it somewhere in your path, and you are ready to go.
+
+### Building Latest and Greates
+
 The project is written in Go, and currently will require building from source.
 Make sure you have Go installed and configured, then just run:
 
