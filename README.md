@@ -12,7 +12,7 @@ of an export from the Ghost blogging engine into the Hugo engine.
 
 There are 2 options for installation.
 
-### Pre-Build Binaries
+### Pre-Built Binaries
 
 With every new versioned release. Binaries are built for most major platforms.
 You can simply download the one for your operating system from the 
