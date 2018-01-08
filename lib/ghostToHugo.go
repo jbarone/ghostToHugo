@@ -191,9 +191,12 @@ func (gth *GhostToHugo) exportPosts(posts <-chan post) {
 				fmt.Printf("ERROR writing %s: %v\n", name, err)
 				return
 			}
-			if p.Content != "" {
+			switch {
+			case p.Content != "":
 				page.SetSourceContent([]byte(p.Content))
-			} else {
+			case p.MobileDoc != "":
+				page.SetSourceContent([]byte(p.mobiledocMarkdown()))
+			default:
 				page.SetSourceContent([]byte(p.Plain))
 			}
 			err = page.SafeSaveSourceAs(name)

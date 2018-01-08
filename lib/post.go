@@ -11,12 +11,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+type mobiledocCard struct {
+	Name     string `json:"cardName"`
+	Markdown string `json:"markdown"`
+}
+
 type post struct {
 	ID              json.RawMessage `json:"id"`
 	Title           string          `json:"title"`
 	Slug            string          `json:"slug"`
 	Content         string          `json:"markdown"`
 	Plain           string          `json:"plaintext"`
+	MobileDoc       string          `json:"mobiledoc",omitempty`
 	Image           string          `json:"image"`
 	Page            json.RawMessage `json:"page"`
 	Status          string          `json:"status"`
@@ -56,6 +62,47 @@ func (p *post) populate(gi *ghostInfo, gth *GhostToHugo) {
 			}
 		}
 	}
+}
+
+func (p post) mobiledocMarkdown() string {
+	if p.MobileDoc == "" {
+		return ""
+	}
+
+	decoder := json.NewDecoder(bytes.NewReader([]byte(p.MobileDoc)))
+	err := seekTo(decoder, "cards")
+	if err != nil {
+		return ""
+	}
+	_, err = decoder.Token() // Stip token
+	if err != nil {
+		return ""
+	}
+
+	for decoder.More() {
+
+		_, err = decoder.Token() // Stip token
+		if err != nil {
+			return ""
+		}
+
+		_, err = decoder.Token() // Stip token
+		if err != nil {
+			return ""
+		}
+
+		var card mobiledocCard
+		err = decoder.Decode(&card)
+		if err != nil {
+			return ""
+		}
+
+		if card.Name == "card-markdown" {
+			return card.Markdown
+		}
+	}
+
+	return ""
 }
 
 func (p post) path(site *hugolib.Site) string {
