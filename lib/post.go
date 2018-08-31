@@ -22,8 +22,9 @@ type post struct {
 	Slug            string          `json:"slug"`
 	Content         string          `json:"markdown"`
 	Plain           string          `json:"plaintext"`
-	MobileDoc       string          `json:"mobiledoc",omitempty`
+	MobileDoc       string          `json:"mobiledoc,omitempty"`
 	Image           string          `json:"image"`
+	FeaturedImage   string          `json:"feature_image,omitempty"`
 	Page            json.RawMessage `json:"page"`
 	Status          string          `json:"status"`
 	MetaDescription string          `json:"meta_description"`
@@ -116,7 +117,7 @@ func (p post) path(site *hugolib.Site) string {
 }
 
 func stripContentFolder(originalString string) string {
-	return strings.Replace(originalString, "/content/", "/", -1)
+	return strings.TrimPrefix(originalString, "/content")
 }
 
 func (p post) metadata() map[string]interface{} {
@@ -134,6 +135,8 @@ func (p post) metadata() map[string]interface{} {
 	metadata["description"] = p.MetaDescription
 	if p.Image != "" {
 		metadata["image"] = stripContentFolder(p.Image)
+	} else if p.FeaturedImage != "" {
+		metadata["image"] = stripContentFolder(p.FeaturedImage)
 	}
 	if len(p.Tags) > 0 {
 		metadata["tags"] = p.Tags
