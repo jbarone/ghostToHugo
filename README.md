@@ -19,7 +19,7 @@ You can simply download the one for your operating system from the
 [releases page](https://github.com/jbarone/ghostToHugo/releases/latest). Unzip
 the package and place it somewhere in your path, and you are ready to go.
 
-### Building Latest and Greates
+### Building the Latest and Greatest
 
 The project is written in Go, and currently will require building from source.
 Make sure you have Go installed and configured, then just run:
