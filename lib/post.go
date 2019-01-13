@@ -3,11 +3,14 @@ package ghostToHugo
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"log"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/gohugoio/hugo/hugolib"
+	"github.com/jbarone/mobiledoc"
 	"github.com/spf13/viper"
 )
 
@@ -40,6 +43,67 @@ type post struct {
 	Tags      []string
 }
 
+func atomSoftReturn(value string, payload interface{}) string {
+	return "\n"
+}
+
+func cardMarkdown(payload interface{}) string {
+	m, ok := payload.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	if markdown, ok := m["markdown"]; ok {
+		return fmt.Sprintf("%s\n", markdown.(string))
+	}
+	return ""
+}
+
+func cardImage(payload interface{}) string {
+	m, ok := payload.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	src, ok := m["src"]
+	if !ok {
+		log.Println("ERROR image card missing source")
+		return ""
+	}
+
+	if caption, ok := m["caption"]; ok {
+		return fmt.Sprintf(
+			"{{< figure src=\"%s\" caption=\"%s\" >}}\n",
+			src,
+			caption,
+		)
+	}
+
+	return fmt.Sprintf("{{< figure src=\"%s\" >}}\n", src)
+}
+
+func cardHR(payload interface{}) string {
+	return "---\n"
+}
+
+func cardCode(payload interface{}) string {
+	m, ok := payload.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	var buf bytes.Buffer
+
+	buf.WriteString("```")
+	if lang, ok := m["language"]; ok {
+		buf.WriteString(lang.(string))
+	}
+	buf.WriteString("\n")
+	buf.WriteString(m["code"].(string))
+	buf.WriteString("\n```\n")
+
+	return buf.String()
+}
+
 func (p *post) populate(gi *ghostInfo, gth *GhostToHugo) {
 	p.Published = gth.parseTime(p.PublishedAt)
 	p.Created = gth.parseTime(p.CreatedAt)
@@ -70,40 +134,25 @@ func (p post) mobiledocMarkdown() string {
 		return ""
 	}
 
-	decoder := json.NewDecoder(bytes.NewReader([]byte(p.MobileDoc)))
-	err := seekTo(decoder, "cards")
+	r := strings.NewReader(p.MobileDoc)
+	var buf bytes.Buffer
+
+	md := mobiledoc.NewMobiledoc(r).
+		WithAtom("soft-break", atomSoftReturn).
+		WithAtom("soft-return", atomSoftReturn).
+		WithCard("card-markdown", cardMarkdown).
+		WithCard("markdown", cardMarkdown).
+		WithCard("hr", cardHR).
+		WithCard("image", cardImage).
+		WithCard("code", cardCode)
+
+	err := md.Render(&buf)
 	if err != nil {
+		log.Printf("ERROR rendering post %s (%v)", p.ID, err)
 		return ""
 	}
-	_, err = decoder.Token() // Stip token
-	if err != nil {
-		return ""
-	}
 
-	for decoder.More() {
-
-		_, err = decoder.Token() // Stip token
-		if err != nil {
-			return ""
-		}
-
-		_, err = decoder.Token() // Stip token
-		if err != nil {
-			return ""
-		}
-
-		var card mobiledocCard
-		err = decoder.Decode(&card)
-		if err != nil {
-			return ""
-		}
-
-		if card.Name == "card-markdown" {
-			return card.Markdown
-		}
-	}
-
-	return ""
+	return buf.String()
 }
 
 func (p post) path(site *hugolib.Site) string {

@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/gohugoio/hugo/hugolib"
@@ -16,7 +15,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// GhostToHugo handles the import of a Ghot blog export and outputting to
+// GhostToHugo handles the import of a Ghost blog export and outputting to
 // hugo static blog
 type GhostToHugo struct {
 	location   *time.Location
@@ -164,49 +163,40 @@ func (gth *GhostToHugo) parseTime(raw json.RawMessage) time.Time {
 }
 
 func (gth *GhostToHugo) exportPosts(posts <-chan post) {
-	throttle := make(chan struct{}, goMaxProcs()*5)
-	var wg sync.WaitGroup
 	site, err := hugolib.NewSiteDefaultLang()
 	if err != nil {
 		fmt.Printf("ERROR getting site: %v\n", err)
 		return
 	}
 	for p := range posts {
-		wg.Add(1)
-		go func(p post) {
-			throttle <- struct{}{}
-			defer func() { <-throttle }()
-			defer wg.Done()
-			var name = p.path(site)
-			log.Println("saving file", name)
-			page, err := site.NewPage(name)
-			if err != nil {
-				fmt.Printf("ERROR writing %s: %v\n", name, err)
-				return
-			}
-			err = page.SetSourceMetaData(
-				p.metadata(),
-				parser.FormatToLeadRune(viper.GetString("MetaDataFormat")))
-			if err != nil {
-				fmt.Printf("ERROR writing %s: %v\n", name, err)
-				return
-			}
-			switch {
-			case p.Content != "":
-				page.SetSourceContent([]byte(p.Content))
-			case p.MobileDoc != "":
-				page.SetSourceContent([]byte(p.mobiledocMarkdown()))
-			default:
-				page.SetSourceContent([]byte(p.Plain))
-			}
-			err = page.SafeSaveSourceAs(name)
-			if err != nil {
-				fmt.Printf("ERROR writing %s: %v\n", name, err)
-				return
-			}
-		}(p)
+		var name = p.path(site)
+		log.Println("saving file", name)
+		page, err := site.NewPage(name)
+		if err != nil {
+			fmt.Printf("ERROR writing %s: %v\n", name, err)
+			return
+		}
+		err = page.SetSourceMetaData(
+			p.metadata(),
+			parser.FormatToLeadRune(viper.GetString("MetaDataFormat")))
+		if err != nil {
+			fmt.Printf("ERROR writing %s: %v\n", name, err)
+			return
+		}
+		switch {
+		case p.Content != "":
+			page.SetSourceContent([]byte(p.Content))
+		case p.MobileDoc != "":
+			page.SetSourceContent([]byte(p.mobiledocMarkdown()))
+		default:
+			page.SetSourceContent([]byte(p.Plain))
+		}
+		err = page.SafeSaveSourceAs(name)
+		if err != nil {
+			fmt.Printf("ERROR writing %s: %v\n", name, err)
+			return
+		}
 	}
-	wg.Wait()
 }
 
 func (gth *GhostToHugo) Export(path string) {
