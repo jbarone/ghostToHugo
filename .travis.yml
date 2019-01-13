@@ -1,18 +1,5 @@
 language: go
 go:
-- '1.8.3'
-- '1.9.2'
+- '1.11.4'
 - 'tip'
 script: go test -v ./lib/... .
-before_deploy: make release
-deploy:
-  provider: releases
-  skip_cleanup: true
-  api_key:
-    secure: EzY5TE0cfdMJKAgBbYlJWdNltHUHpvM0r+4tBxILf/sX3v54DdqUv8z2l42Fs3MUV5yUJC4og2k2xoC0Pdmd7SttTjWk2Ov1cwUMHxC/qADfr+JfbMKirOYZXA8NU7BMPgnPtEt97ZCrEnZFLEdNwd9ExhHy3G/mWAZhSrRejNVz7qNWQ72L4eHIjloK2nQKSUB3zmgAMUZMpYsylulvx4RnQ6VNb7PNikGkk2Sms5twQgYgtKinIv82n+vR7/8l3clu78FHc0zkDArNakIw3/eL7izqlULXsSUENmmeJqEu2kUaHaYhTGuSMjMtEpErn3KWE5UCDTT6QtTPXQo5bybx0OQZ6fkiCPqMVNkjG2ITUGz70GsvX2Tm0ufVlpBgHYLUEbj0VfSMUaa8m3PyYtgJ7PDmJjfvT+WOmb4Qy/s17cPFj/a8F3NdwT5OGEeGRkhmoo3IFaQ2jPkUPfCrOKRdpzeJOMfuba+o12Z+eeyujzf+jdaf8ryAazUItCVAEpBXAQUhpoacyvVD8hU27vM7ctlHCp40PRfEj9hHkDRSBbgmo17dcMcGvkUsi4QVxXd7W9nIflW2/XFdyKhbnplkTRxvgvRwAhHVbwzWc9RuqBAx0vtVAA4sIYYjWMAtRrCRkbun3DaYHTybeL7pGRVRydNZuFigDoIoceM/Lb4=
-  file_glob: true
-  file: release/*
-  on:
-    repo: jbarone/ghostToHugo
-    tags: true
-    go: 1.9.2
