@@ -104,6 +104,21 @@ func cardCode(payload interface{}) string {
 	return buf.String()
 }
 
+func cardEmbed(payload interface{}) string {
+	m, ok := payload.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	html, ok := m["html"]
+	if !ok {
+		log.Println("ERROR embed card missing html")
+		return ""
+	}
+
+	return html.(string)
+}
+
 func (p *post) populate(gi *ghostInfo, gth *GhostToHugo) {
 	p.Published = gth.parseTime(p.PublishedAt)
 	p.Created = gth.parseTime(p.CreatedAt)
@@ -144,7 +159,8 @@ func (p post) mobiledocMarkdown() string {
 		WithCard("markdown", cardMarkdown).
 		WithCard("hr", cardHR).
 		WithCard("image", cardImage).
-		WithCard("code", cardCode)
+		WithCard("code", cardCode).
+		WithCard("embed", cardEmbed)
 
 	err := md.Render(&buf)
 	if err != nil {
