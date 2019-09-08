@@ -41,6 +41,7 @@ type post struct {
 	IsPage    bool
 	Author    string
 	Tags      []string
+	Aliases   []string
 }
 
 func atomSoftReturn(value string, payload interface{}) string {
@@ -142,6 +143,8 @@ func (p *post) populate(gi *ghostInfo, gth *GhostToHugo) {
 			}
 		}
 	}
+	
+	p.Aliases = append(p.Aliases, "/" + p.Slug)
 }
 
 func (p post) mobiledocMarkdown() string {
