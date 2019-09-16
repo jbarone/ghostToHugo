@@ -81,6 +81,56 @@ func cardImage(payload interface{}) string {
 	return fmt.Sprintf("{{< figure src=\"%s\" >}}\n", src)
 }
 
+func cardGallery(payload interface{}) string {
+	m, ok := payload.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("<figure>\n")
+	buf.WriteString("  <div>\n")   // gallery container
+	buf.WriteString("    <div>\n") // start of first row
+	images, ok := m["images"]
+	if !ok {
+		return ""
+	}
+
+	for i, img := range images.([]interface{}) {
+		if i > 0 && i%3 == 0 {
+			buf.WriteString("    </div>") // end of current row
+			buf.WriteString("    <div>")  // start of next row
+		}
+		image, ok := img.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		buf.WriteString("      <div>")
+		buf.WriteString("<img")
+		buf.WriteString(fmt.Sprintf(" src=%q", stripContentFolder(image["src"].(string))))
+		buf.WriteString(fmt.Sprintf(" width=\"%.0f\"", image["width"].(float64)))
+		buf.WriteString(fmt.Sprintf(" height=\"%.0f\"", image["height"].(float64)))
+		if alt, ok := image["alt"]; ok {
+			buf.WriteString(fmt.Sprintf(" alt=%q", alt.(string)))
+		}
+		if title, ok := image["title"]; ok {
+			buf.WriteString(fmt.Sprintf(" title=%q", title.(string)))
+		}
+		buf.WriteString("/>")
+		buf.WriteString("</div>\n")
+	}
+	buf.WriteString("    </div>\n") // end of current row
+	buf.WriteString("  </div>\n")   // end of gallery container
+
+	if caption, ok := m["caption"]; ok {
+		buf.WriteString(fmt.Sprintf("  <figcaption>\n    %s\n  </figcaption>\n", caption.(string)))
+	}
+
+	buf.WriteString("</figure>")
+
+	return buf.String()
+}
+
 func cardHR(payload interface{}) string {
 	return "---\n"
 }
@@ -160,7 +210,8 @@ func (p post) mobiledocMarkdown() string {
 		WithCard("hr", cardHR).
 		WithCard("image", cardImage).
 		WithCard("code", cardCode).
-		WithCard("embed", cardEmbed)
+		WithCard("embed", cardEmbed).
+		WithCard("gallery", cardGallery)
 
 	err := md.Render(&buf)
 	if err != nil {
