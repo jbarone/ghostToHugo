@@ -47,6 +47,19 @@ func atomSoftReturn(value string, payload interface{}) string {
 	return "\n"
 }
 
+func cardHTML(payload interface{}) string {
+	m, ok := payload.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	if html, ok := m["html"]; ok {
+		return html.(string)
+	}
+
+	return ""
+}
+
 func cardMarkdown(payload interface{}) string {
 	m, ok := payload.(map[string]interface{})
 	if !ok {
@@ -154,6 +167,87 @@ func cardCode(payload interface{}) string {
 	return buf.String()
 }
 
+func cardBookmark(payload interface{}) string {
+	/*
+	 */
+	m, ok := payload.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	meta, ok := m["metadata"]
+	if !ok {
+		return ""
+	}
+
+	metadata, ok := meta.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	url, ok := metadata["url"]
+	if !ok {
+		return ""
+	}
+	title, ok := metadata["title"]
+	if !ok {
+		return ""
+	}
+	description, ok := metadata["description"]
+	if !ok {
+		return ""
+	}
+
+	var thumbnail, icon, author, publisher, caption string
+	thumb, ok := metadata["thumbnail"]
+	if ok {
+		thumbnail = fmt.Sprintf("<div><img src=%q></div>", thumb.(string))
+	}
+	iconinfo, ok := metadata["icon"]
+	if ok {
+		icon = fmt.Sprintf("<img src=%q>", iconinfo.(string))
+	}
+	authorinfo, ok := metadata["author"]
+	if ok && authorinfo != nil {
+		author = fmt.Sprintf("<span>%s</span>", authorinfo.(string))
+	}
+	publisherinfo, ok := metadata["publisher"]
+	if ok && publisherinfo != nil {
+		publisher = fmt.Sprintf("<span>%s</span>", publisherinfo.(string))
+	}
+
+	capt, ok := m["caption"]
+	if ok && capt != nil {
+		caption = fmt.Sprintf("<figcaption>%s</figcaption>", capt.(string))
+	}
+
+	return fmt.Sprintf(
+		`<figure>
+	     <a href=%q>
+	       <div>
+	         <div>%s</div>
+	         <div>%s</div>
+	         <div>
+	           %s
+	           %s
+	           %s
+	         </div>
+	       </div>
+	       %s
+	     </a>
+	     %s
+	   </figure>`,
+		url.(string),
+		title.(string),
+		description.(string),
+		icon,
+		author,
+		publisher,
+		thumbnail,
+		caption,
+	)
+}
+
 func cardEmbed(payload interface{}) string {
 	m, ok := payload.(map[string]interface{})
 	if !ok {
@@ -211,7 +305,9 @@ func (p post) mobiledocMarkdown() string {
 		WithCard("image", cardImage).
 		WithCard("code", cardCode).
 		WithCard("embed", cardEmbed).
-		WithCard("gallery", cardGallery)
+		WithCard("gallery", cardGallery).
+		WithCard("html", cardHTML).
+		WithCard("bookmark", cardBookmark)
 
 	err := md.Render(&buf)
 	if err != nil {
