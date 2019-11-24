@@ -1,4 +1,4 @@
-package ghostToHugo
+package ghosttohugo
 
 import (
 	"encoding/json"
@@ -27,46 +27,56 @@ type posttag struct {
 	SortOrder int             `json:"sort_order,omitempty"`
 }
 
-type ghostInfo struct {
-	m        meta
+type setting struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type info struct {
+	meta     meta
 	users    []user
 	tags     []tag
 	posttags []posttag
+	settings map[string]string
 }
 
-func decodeGhostInfo(r io.Reader) (ghostInfo, error) {
-	var gi ghostInfo
-	var decoder = json.NewDecoder(r)
-	var doneCount int
+func (c *Converter) decodeInfo(r io.Reader) error {
+	decoder := json.NewDecoder(r)
 
-	for doneCount < 4 {
+	for {
 		tok, err := decoder.Token()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return gi, err
+			return err
 		}
 
 		switch tok {
 		case "meta":
-			err = decoder.Decode(&gi.m)
-			doneCount++
+			err = decoder.Decode(&c.info.meta)
 		case "users":
-			err = decoder.Decode(&gi.users)
-			doneCount++
+			err = decoder.Decode(&c.info.users)
 		case "tags":
-			err = decoder.Decode(&gi.tags)
-			doneCount++
+			err = decoder.Decode(&c.info.tags)
 		case "posts_tags":
-			err = decoder.Decode(&gi.posttags)
-			doneCount++
+			err = decoder.Decode(&c.info.posttags)
+		case "settings":
+			var settings []setting
+			err = decoder.Decode(&settings)
+			if err != nil || len(settings) == 0 {
+				break // out of switch
+			}
+			c.info.settings = make(map[string]string)
+			for _, setting := range settings {
+				c.info.settings[setting.Key] = setting.Value
+			}
 		}
 
 		if err != nil {
-			return gi, err
+			return err
 		}
 	}
 
-	return gi, nil
+	return nil
 }
