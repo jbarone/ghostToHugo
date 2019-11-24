@@ -15,13 +15,13 @@ There are 2 options for installation.
 ### Pre-Built Binaries
 
 With every new versioned release. Binaries are built for most major platforms.
-You can simply download the one for your operating system from the 
+You can simply download the one for your operating system from the
 [releases page](https://github.com/jbarone/ghostToHugo/releases/latest). Unzip
 the package and place it somewhere in your path, and you are ready to go.
 
-### Building the Latest and Greatest
+### Fetch With Go
 
-The project is written in Go, and currently will require building from source.
+The project is written in Go, and can easily be built from source.
 Make sure you have Go installed and configured, then just run:
 
 ```
@@ -30,21 +30,35 @@ go get -u github.com/jbarone/ghostToHugo
 
 this will download, compile, and install `ghostToHugo`
 
-## Using
+### Building the Latest and Greatest
+
+Alternately, you can build directly:
+
+```
+git clone http://github.com/jbarone/ghostToHugo
+cd ghostToHugo
+go install
+```
+
+## Usage
 
 ```
 Usage: ghostToHugo [OPTIONS] <Ghost Export>
-  -f, --dateformat string   Date format string to use for time conversions (default: RFC3339)
-  -p, --hugo string         Path to hugo project (default ".")
-  -l, --location string     Location to use for time conversions (default: local)
+  -d, --dateformat string   date format string to use for time conversions (default "2006-01-02 15:04:05")
+      --debug               print verbose logging output
+  -f, --force               allow import into non-empty target directory
+  -p, --hugo string         path to create the new hugo project (default "newhugosite")
+  -l, --location string     location to use for time conversions (default: local)
+  -v, --verbose             print verbose logging output
 ```
 
 At a minimum you need to specify the path to the exported Ghost json file.
 
-NOTES: 
+NOTES:
 
 - The `dateformat` string must be provided in Go's specific time format string. Reference [here](https://gobyexample.com/time-formatting-parsing)
 - The `location` string should be a value that matches the IANA Time Zone database, such as "America/New_York"
+- The path specified for the new Hugo site, must either not exist, or be an empty directory. A new site will be created at that location.
 
 ### Examples
 
@@ -59,7 +73,7 @@ $ ghostToHugo -p ~/mysite export.json
 
 ```
 $ ghostToHugo --dateformat "2006-01-02 15:04:05" export.json
-$ ghostToHugo -f "2006-01-02 15:04:05" export.json
+$ ghostToHugo -d "2006-01-02 15:04:05" export.json
 ```
 
 ```
@@ -68,6 +82,8 @@ $ ghostToHugo -l "America/Chicago" export.json
 ```
 
 ## Exporting your Ghost content
-You can export your Ghost content (and settings) from the "Labs" section of your Ghost install, which will be at a URL like `<your blog url>/ghost/settings/labs/`.
+You can export your Ghost content (and settings) from the "Labs" section of your Ghost install, which will be at a URL like:
+
+```http(s)://<your blog url>/ghost/settings/labs/```
 
 See this [Ghost support article](https://help.ghost.org/hc/en-us/articles/224112927-Import-Export-Data) for details.
