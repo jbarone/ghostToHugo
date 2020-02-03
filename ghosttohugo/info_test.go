@@ -18,20 +18,27 @@ func TestConverter_decodeInfo(t *testing.T) {
 		{"empty", "", info{}, false},
 
 		// Meta Tests
-		{"empty_meta", `{"meta": {}}`, info{}, false},
+		{
+			"empty_meta",
+			`{"db":[{"meta": {}}]}`,
+			info{settings: make(map[string]string)},
+			false,
+		},
 		{
 			"version_meta",
-			`{"meta": {"version": "0.3.0"}}`,
+			`{"db":[{"meta": {"version": "0.3.0"}}]}`,
 			info{
-				meta: meta{Version: "0.3.0"},
+				Meta:     meta{Version: "0.3.0"},
+				settings: make(map[string]string),
 			},
 			false,
 		},
 		{
 			"exported_on_meta",
-			`{"meta": {"exported_on": 1234567890}}`,
+			`{"db":[{"meta": {"exported_on": 1234567890}}]}`,
 			info{
-				meta: meta{ExportedOn: 1234567890},
+				Meta:     meta{ExportedOn: 1234567890},
+				settings: make(map[string]string),
 			},
 			false,
 		},
@@ -39,25 +46,31 @@ func TestConverter_decodeInfo(t *testing.T) {
 		// Users tests
 		{
 			"single_user",
-			`{"users": [{"id":1234,"name":"username"}]}`,
+			`{"db":[{"data":{"users": [{"id":1234,"name":"username"}]}}]}`,
 			info{
-				users: []user{
-					user{json.RawMessage("1234"), "username"},
+				Data: data{
+					Users: []user{
+						user{json.RawMessage("1234"), "username"},
+					},
 				},
+				settings: make(map[string]string),
 			},
 			false,
 		},
 		{
 			"multiple_users",
-			`{"users": [
+			`{"db":[{"data":{"users": [
 				{"id":1234,"name":"username1"},
 				{"id":4321,"name":"username2"}
-			]}`,
+			]}}]}`,
 			info{
-				users: []user{
-					user{json.RawMessage("1234"), "username1"},
-					user{json.RawMessage("4321"), "username2"},
+				Data: data{
+					Users: []user{
+						user{json.RawMessage("1234"), "username1"},
+						user{json.RawMessage("4321"), "username2"},
+					},
 				},
+				settings: make(map[string]string),
 			},
 			false,
 		},
@@ -65,25 +78,31 @@ func TestConverter_decodeInfo(t *testing.T) {
 		// Tag tests
 		{
 			"single_tag",
-			`{"tags": [{"id":1234,"name":"tagname"}]}`,
+			`{"db":[{"data":{"tags": [{"id":1234,"name":"tagname"}]}}]}`,
 			info{
-				tags: []tag{
-					tag{json.RawMessage("1234"), "tagname"},
+				Data: data{
+					Tags: []tag{
+						tag{json.RawMessage("1234"), "tagname"},
+					},
 				},
+				settings: make(map[string]string),
 			},
 			false,
 		},
 		{
 			"multiple_tags",
-			`{"tags": [
+			`{"db":[{"data":{"tags": [
 				{"id":1234,"name":"tagname1"},
 				{"id":4321,"name":"tagname2"}
-			]}`,
+			]}}]}`,
 			info{
-				tags: []tag{
-					tag{json.RawMessage("1234"), "tagname1"},
-					tag{json.RawMessage("4321"), "tagname2"},
+				Data: data{
+					Tags: []tag{
+						tag{json.RawMessage("1234"), "tagname1"},
+						tag{json.RawMessage("4321"), "tagname2"},
+					},
 				},
+				settings: make(map[string]string),
 			},
 			false,
 		},
@@ -91,37 +110,45 @@ func TestConverter_decodeInfo(t *testing.T) {
 		// PostTags tests
 		{
 			"singe_post_tag",
-			`{"posts_tags": [{"id": 1234, "post_id": 4321, "tag_id": 5432}]}`,
+			`{"db":[{"data":{
+				"posts_tags": [{"id": 1234, "post_id": 4321, "tag_id": 5432}]
+			}}]}`,
 			info{
-				posttags: []posttag{
-					posttag{
-						ID:     json.RawMessage("1234"),
-						PostID: json.RawMessage("4321"),
-						TagID:  json.RawMessage("5432"),
+				Data: data{
+					PostTags: []posttag{
+						posttag{
+							ID:     json.RawMessage("1234"),
+							PostID: json.RawMessage("4321"),
+							TagID:  json.RawMessage("5432"),
+						},
 					},
 				},
+				settings: make(map[string]string),
 			},
 			false,
 		},
 		{
 			"multiple_post_tags",
-			`{"posts_tags": [
+			`{"db":[{"data":{"posts_tags": [
 				{"id": 1234, "post_id": 4321, "tag_id": 5432},
 				{"id": 2468, "post_id": 5555, "tag_id": 6666}
-			]}`,
+			]}}]}`,
 			info{
-				posttags: []posttag{
-					posttag{
-						ID:     json.RawMessage("1234"),
-						PostID: json.RawMessage("4321"),
-						TagID:  json.RawMessage("5432"),
-					},
-					posttag{
-						ID:     json.RawMessage("2468"),
-						PostID: json.RawMessage("5555"),
-						TagID:  json.RawMessage("6666"),
+				Data: data{
+					PostTags: []posttag{
+						posttag{
+							ID:     json.RawMessage("1234"),
+							PostID: json.RawMessage("4321"),
+							TagID:  json.RawMessage("5432"),
+						},
+						posttag{
+							ID:     json.RawMessage("2468"),
+							PostID: json.RawMessage("5555"),
+							TagID:  json.RawMessage("6666"),
+						},
 					},
 				},
+				settings: make(map[string]string),
 			},
 			false,
 		},

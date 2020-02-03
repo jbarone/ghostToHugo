@@ -32,11 +32,16 @@ type setting struct {
 	Value string `json:"value"`
 }
 
+type data struct {
+	Users    []user    `json:"users"`
+	Tags     []tag     `json:"tags"`
+	PostTags []posttag `json:"posts_tags"`
+	Settings []setting `json:"settings"`
+}
+
 type info struct {
-	meta     meta
-	users    []user
-	tags     []tag
-	posttags []posttag
+	Meta     meta `json:"meta"`
+	Data     data `json:"data"`
 	settings map[string]string
 }
 
@@ -52,30 +57,19 @@ func (c *Converter) decodeInfo(r io.Reader) error {
 			return err
 		}
 
-		switch tok {
-		case "meta":
-			err = decoder.Decode(&c.info.meta)
-		case "users":
-			err = decoder.Decode(&c.info.users)
-		case "tags":
-			err = decoder.Decode(&c.info.tags)
-		case "posts_tags":
-			err = decoder.Decode(&c.info.posttags)
-		case "settings":
-			var settings []setting
-			err = decoder.Decode(&settings)
-			if err != nil || len(settings) == 0 {
-				break // out of switch
-			}
-			c.info.settings = make(map[string]string)
-			for _, setting := range settings {
-				c.info.settings[setting.Key] = setting.Value
+		if tok == "db" {
+			decoder.Token()
+			err = decoder.Decode(&c.info)
+			if err != nil {
+				return err
 			}
 		}
 
-		if err != nil {
-			return err
+		c.info.settings = make(map[string]string)
+		for _, setting := range c.info.Data.Settings {
+			c.info.settings[setting.Key] = setting.Value
 		}
+
 	}
 
 	return nil

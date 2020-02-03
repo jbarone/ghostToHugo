@@ -96,19 +96,19 @@ func (c Converter) populatePost(p *post) {
 	p.Published = c.parseTime(p.PublishedAt)
 	p.Created = c.parseTime(p.CreatedAt)
 
-	for _, user := range c.info.users {
+	for _, user := range c.info.Data.Users {
 		if bytes.Equal(user.ID, p.AuthorID) {
 			p.Author = user.Name
 			break
 		}
 	}
 
-	for _, posttag := range c.info.posttags {
+	for _, posttag := range c.info.Data.PostTags {
 		if !bytes.Equal(posttag.PostID, p.ID) {
 			continue
 		}
 
-		for _, tag := range c.info.tags {
+		for _, tag := range c.info.Data.Tags {
 			if bytes.Equal(tag.ID, posttag.TagID) {
 				p.Tags = append(p.Tags, strings.TrimPrefix(tag.Name, "#"))
 				break
