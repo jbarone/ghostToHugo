@@ -10,15 +10,14 @@ builds:
     - darwin
   env:
     - CGO_ENABLED=0
-archive:
-  replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    386: i386
-    amd64: x86_64
 archives:
   -
+    replacements:
+        darwin: Darwin
+        linux: Linux
+        windows: Windows
+        386: i386
+        amd64: x86_64
     format_overrides:
       - goos: windows
         format: zip
