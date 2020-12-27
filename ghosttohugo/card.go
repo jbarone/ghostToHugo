@@ -44,47 +44,34 @@ func cardBookmark(payload interface{}) string {
 
 	var thumbnail, icon, author, publisher, caption string
 	thumb, ok := metadata["thumbnail"]
-	if ok {
+	if ok && thumb != nil {
 		jww.TRACE.Println("cardBookmark: found thumbnail")
-		thumbnail = fmt.Sprintf("<div><img src=%q></div>", thumb.(string))
+		thumbnail = stripContentFolder(thumb.(string))
 	}
 	iconinfo, ok := metadata["icon"]
-	if ok {
+	if ok && iconinfo != nil {
 		jww.TRACE.Println("cardBookmark: found icon")
-		icon = fmt.Sprintf("<img src=%q>", iconinfo.(string))
+		icon = stripContentFolder(iconinfo.(string))
 	}
 	authorinfo, ok := metadata["author"]
 	if ok && authorinfo != nil {
 		jww.TRACE.Println("cardBookmark: found author")
-		author = fmt.Sprintf("<span>%s</span>", authorinfo.(string))
+		author = authorinfo.(string)
 	}
 	publisherinfo, ok := metadata["publisher"]
 	if ok && publisherinfo != nil {
 		jww.TRACE.Println("cardBookmark: found publisher")
-		publisher = fmt.Sprintf("<span>%s</span>", publisherinfo.(string))
+		publisher = publisherinfo.(string)
 	}
 	capt, ok := m["caption"]
 	if ok && capt != nil {
 		jww.TRACE.Println("cardBookmark: found caption")
-		caption = fmt.Sprintf("<figcaption>%s</figcaption>", capt.(string))
+		caption = capt.(string)
 	}
 
 	return fmt.Sprintf(
-		`<figure>
-	     <a href=%q>
-	       <div>
-	         <div>%s</div>
-	         <div>%s</div>
-	         <div>
-	           %s
-	           %s
-	           %s
-	         </div>
-	       </div>
-	       %s
-	     </a>
-	     %s
-	   </figure>`,
+		"{{< bookmark url=%q title=%q description=%q icon=%q"+
+			" author=%q publisher=%q thumbnail=%q caption=%q >}}",
 		url.(string),
 		title.(string),
 		description.(string),
@@ -143,28 +130,25 @@ func cardGallery(payload interface{}) string {
 		jww.ERROR.Println("cardGallery: payload not correct type")
 		return ""
 	}
-
-	var buf bytes.Buffer
-	buf.WriteString("<figure>\n")
-	buf.WriteString("  <div>\n")   // gallery container
-	buf.WriteString("    <div>\n") // start of first row
 	images, ok := m["images"]
 	if !ok {
 		jww.ERROR.Println("cardGallery: missing images")
 		return ""
 	}
 
-	for i, img := range images.([]interface{}) {
-		if i > 0 && i%3 == 0 {
-			buf.WriteString("    </div>") // end of current row
-			buf.WriteString("    <div>")  // start of next row
-		}
+	var buf bytes.Buffer
+	buf.WriteString("{{< gallery")
+	if caption, ok := m["caption"]; ok {
+		buf.WriteString(fmt.Sprintf(" caption=\"%s\"", caption.(string)))
+	}
+	buf.WriteString(" >}}\n")
+
+	for _, img := range images.([]interface{}) {
 		image, ok := img.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		buf.WriteString("      <div>")
-		buf.WriteString("<img")
+		buf.WriteString("{{< galleryImg ")
 		buf.WriteString(fmt.Sprintf(" src=%q", stripContentFolder(image["src"].(string))))
 		buf.WriteString(fmt.Sprintf(" width=\"%.0f\"", image["width"].(float64)))
 		buf.WriteString(fmt.Sprintf(" height=\"%.0f\"", image["height"].(float64)))
@@ -174,17 +158,10 @@ func cardGallery(payload interface{}) string {
 		if title, ok := image["title"]; ok {
 			buf.WriteString(fmt.Sprintf(" title=%q", title.(string)))
 		}
-		buf.WriteString("/>")
-		buf.WriteString("</div>\n")
-	}
-	buf.WriteString("    </div>\n") // end of current row
-	buf.WriteString("  </div>\n")   // end of gallery container
-
-	if caption, ok := m["caption"]; ok {
-		buf.WriteString(fmt.Sprintf("  <figcaption>\n    %s\n  </figcaption>\n", caption.(string)))
+		buf.WriteString(" >}}")
 	}
 
-	buf.WriteString("</figure>")
+	buf.WriteString("{{< /gallery >}}")
 
 	return buf.String()
 }
@@ -223,12 +200,15 @@ func cardImage(payload interface{}) string {
 	if caption, ok := m["caption"]; ok {
 		return fmt.Sprintf(
 			"{{< figure src=\"%s\" caption=\"%s\" >}}\n",
-			src,
+			stripContentFolder(src.(string)),
 			caption,
 		)
 	}
 
-	return fmt.Sprintf("{{< figure src=\"%s\" >}}\n", src)
+	return fmt.Sprintf(
+		"{{< figure src=\"%s\" >}}\n",
+		stripContentFolder(src.(string)),
+	)
 }
 
 func cardMarkdown(payload interface{}) string {

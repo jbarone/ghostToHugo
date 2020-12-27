@@ -50,7 +50,7 @@ func TestConverter_decodeInfo(t *testing.T) {
 			info{
 				Data: data{
 					Users: []user{
-						user{json.RawMessage("1234"), "username"},
+						{json.RawMessage("1234"), "username"},
 					},
 				},
 				settings: make(map[string]string),
@@ -66,8 +66,8 @@ func TestConverter_decodeInfo(t *testing.T) {
 			info{
 				Data: data{
 					Users: []user{
-						user{json.RawMessage("1234"), "username1"},
-						user{json.RawMessage("4321"), "username2"},
+						{json.RawMessage("1234"), "username1"},
+						{json.RawMessage("4321"), "username2"},
 					},
 				},
 				settings: make(map[string]string),
@@ -82,7 +82,7 @@ func TestConverter_decodeInfo(t *testing.T) {
 			info{
 				Data: data{
 					Tags: []tag{
-						tag{json.RawMessage("1234"), "tagname"},
+						{json.RawMessage("1234"), "tagname"},
 					},
 				},
 				settings: make(map[string]string),
@@ -98,8 +98,8 @@ func TestConverter_decodeInfo(t *testing.T) {
 			info{
 				Data: data{
 					Tags: []tag{
-						tag{json.RawMessage("1234"), "tagname1"},
-						tag{json.RawMessage("4321"), "tagname2"},
+						{json.RawMessage("1234"), "tagname1"},
+						{json.RawMessage("4321"), "tagname2"},
 					},
 				},
 				settings: make(map[string]string),
@@ -116,7 +116,7 @@ func TestConverter_decodeInfo(t *testing.T) {
 			info{
 				Data: data{
 					PostTags: []posttag{
-						posttag{
+						{
 							ID:     json.RawMessage("1234"),
 							PostID: json.RawMessage("4321"),
 							TagID:  json.RawMessage("5432"),
@@ -136,12 +136,12 @@ func TestConverter_decodeInfo(t *testing.T) {
 			info{
 				Data: data{
 					PostTags: []posttag{
-						posttag{
+						{
 							ID:     json.RawMessage("1234"),
 							PostID: json.RawMessage("4321"),
 							TagID:  json.RawMessage("5432"),
 						},
-						posttag{
+						{
 							ID:     json.RawMessage("2468"),
 							PostID: json.RawMessage("5555"),
 							TagID:  json.RawMessage("6666"),

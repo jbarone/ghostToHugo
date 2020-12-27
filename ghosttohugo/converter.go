@@ -83,12 +83,25 @@ func (c Converter) parseTime(raw json.RawMessage) time.Time {
 		jww.ERROR.Printf("error unmarshalling time: %v\n", err)
 		return time.Time{}
 	}
-	t, err := time.ParseInLocation(c.dateformat, ps, c.location)
-	if err != nil {
-		jww.ERROR.Printf("error parsing time: %v\n", err)
-		return time.Time{}
+	for _, format := range []string{
+		c.dateformat,
+		time.RFC3339,
+		"Mon Jan _2 15:04:05 2006 MST", // Postgres style
+		"01/02/2006 15:04:05.99 MST",   // SQL style
+		"2006-01-02 15:04:05-07",       // ISO/SQL style
+		"2006-01-02T15:04:05Z",         // RFC3339 without timezone
+		"2006-01-02T15:04:05.999Z",     // RFC3339 nano without timezone
+	} {
+		if format == "" {
+			continue
+		}
+
+		t, err := time.ParseInLocation(format, ps, c.location)
+		if err == nil {
+			return t
+		}
 	}
-	return t
+	return time.Time{}
 
 }
 
@@ -117,6 +130,8 @@ func (c Converter) populatePost(p *post) {
 	}
 }
 
+// Convert is the main function of this package. It takes an io.ReadSeeker
+// to the Ghost Blog export and converts that into a new Hugo site.
 func (c *Converter) Convert(r io.ReadSeeker) (int, error) {
 	if err := c.decodeInfo(r); err != nil {
 		return 0, err
