@@ -25,7 +25,7 @@ The project is written in Go, and can easily be built from source.
 Make sure you have Go installed and configured, then just run:
 
 ```
-go get -u github.com/jbarone/ghostToHugo
+GO111MODULE=on go get github.com/jbarone/ghostToHugo@latest
 ```
 
 this will download, compile, and install `ghostToHugo`
