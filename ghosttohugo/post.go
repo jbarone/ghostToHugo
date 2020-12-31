@@ -28,6 +28,7 @@ type post struct {
 	AuthorID        json.RawMessage `json:"author_id"`
 	PublishedAt     json.RawMessage `json:"published_at"`
 	CreatedAt       json.RawMessage `json:"created_at"`
+	Summary         string          `json:"custom_excerpt"`
 
 	Published time.Time
 	Created   time.Time
@@ -67,6 +68,9 @@ func (p post) frontMatter() map[string]interface{} {
 	}
 	if p.Author != "" {
 		metadata["author"] = p.Author
+	}
+	if p.Summary != "" {
+		metadata["summary"] = p.Summary
 	}
 
 	return metadata
