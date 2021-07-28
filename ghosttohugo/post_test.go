@@ -1,7 +1,6 @@
 package ghosttohugo
 
 import (
-	"encoding/json"
 	"testing"
 )
 
@@ -29,20 +28,20 @@ func Test_post_isDraft(t *testing.T) {
 func Test_post_isPage(t *testing.T) {
 	tests := []struct {
 		name string
-		page json.RawMessage
+		Type string
 		want bool
 	}{
-		{"nil", json.RawMessage(nil), false},
-		{"empty", json.RawMessage([]byte{}), false},
-		{"true", json.RawMessage([]byte("true")), true},
-		{"false", json.RawMessage([]byte("false")), false},
-		{"true_int", json.RawMessage([]byte{49}), true},
-		{"false_int", json.RawMessage([]byte{0}), false},
+		{"nil", "", false},
+		{"empty", "", false},
+		{"true", "page", true},
+		{"false", "false", false},
+		{"true_int", "1", false},
+		{"false_int", "0", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := post{
-				Page: tt.page,
+				Type: tt.Type,
 			}
 			if got := p.isPage(); got != tt.want {
 				t.Errorf("post.isPage() = %v, want %v", got, tt.want)
