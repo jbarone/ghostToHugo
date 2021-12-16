@@ -37,7 +37,7 @@ func cardBookmark(payload interface{}) string {
 		return ""
 	}
 	description, ok := metadata["description"]
-	if !ok {
+	if !ok || description == nil {
 		jww.ERROR.Println("cardBookmark: missing description")
 		return ""
 	}
