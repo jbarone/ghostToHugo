@@ -22,7 +22,7 @@ type post struct {
 	MobileDoc       string          `json:"mobiledoc,omitempty"`
 	Image           string          `json:"image"`
 	FeaturedImage   string          `json:"feature_image,omitempty"`
-	Page            json.RawMessage `json:"page"`
+	Type            string          `json:"type"`
 	Status          string          `json:"status"`
 	MetaDescription string          `json:"meta_description"`
 	AuthorID        json.RawMessage `json:"author_id"`
@@ -41,7 +41,7 @@ func (p post) isDraft() bool {
 }
 
 func (p post) isPage() bool {
-	return parseBool(p.Page)
+	return strings.ToLower(p.Type) == "page"
 }
 
 func (p post) frontMatter() map[string]interface{} {
