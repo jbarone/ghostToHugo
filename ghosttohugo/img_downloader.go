@@ -3,6 +3,7 @@ package ghosttohugo
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -30,6 +31,10 @@ func NewImgDownloader(path string, url string, inscure bool) {
 }
 
 func (imgD imageDownloader) Download(img string) (string, error) {
+
+	if imgD.siteUrl == "" {
+		return "", fmt.Errorf("no base url defined. unable to download use --url to provide one")
+	}
 
 	URL := strings.Replace(img, "__GHOST_URL__", imgD.siteUrl, -1)
 	imageName := filepath.Base(img)
