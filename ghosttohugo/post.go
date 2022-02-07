@@ -3,6 +3,7 @@ package ghosttohugo
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -76,14 +77,18 @@ func (p post) frontMatter() map[string]interface{} {
 	return metadata
 }
 
+func (p *post) fileName() string {
+	return fmt.Sprintf("%s-%s.md", p.Published.Format("2006-01-02"), p.Slug)
+}
+
 func (c *Converter) writePost(p post) error {
 	jww.DEBUG.Printf("converting: %s", p.Title)
 	path := filepath.Join(c.path, "content")
 	switch p.isPage() {
 	case true:
-		path = filepath.Join(path, p.Slug+".md")
+		path = filepath.Join(path, p.fileName())
 	case false:
-		path = filepath.Join(path, "post", p.Slug+".md")
+		path = filepath.Join(path, "post", p.fileName())
 	}
 
 	buf := bytes.NewBuffer(nil)
@@ -95,12 +100,12 @@ func (c *Converter) writePost(p post) error {
 	}
 
 	switch {
-	case p.Content != "":
-		if _, err := buf.Write([]byte(p.Content)); err != nil {
-			return err
-		}
 	case p.MobileDoc != "":
 		if _, err := buf.Write([]byte(p.mobiledocMarkdown())); err != nil {
+			return err
+		}
+	case p.Content != "":
+		if _, err := buf.Write([]byte(p.Content)); err != nil {
 			return err
 		}
 	default:
