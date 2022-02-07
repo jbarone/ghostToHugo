@@ -3,6 +3,8 @@ package ghosttohugo
 import (
 	"bytes"
 	"fmt"
+	"regexp"
+	"strings"
 
 	jww "github.com/spf13/jwalterweatherman"
 )
@@ -197,19 +199,24 @@ func cardImage(payload interface{}) string {
 		return ""
 	}
 
+	img := src.(string)
+	if fileName, err := ImgDownloader.Download(src.(string)); err == nil {
+		img = fileName
+	}
 	if caption, ok := m["caption"]; ok {
 		return fmt.Sprintf(
 			"{{< figure src=\"%s\" caption=\"%s\" >}}\n",
-			stripContentFolder(src.(string)),
+			stripContentFolder(img),
 			caption,
 		)
 	}
-
 	return fmt.Sprintf(
 		"{{< figure src=\"%s\" >}}\n",
-		stripContentFolder(src.(string)),
+		stripContentFolder(img),
 	)
 }
+
+var re = regexp.MustCompile(`(?m)__GHOST_URL__.+?(\))`)
 
 func cardMarkdown(payload interface{}) string {
 	m, ok := payload.(map[string]interface{})
@@ -217,8 +224,15 @@ func cardMarkdown(payload interface{}) string {
 		jww.ERROR.Println("cardMarkdown: payload not correct type")
 		return ""
 	}
+
 	if markdown, ok := m["markdown"]; ok {
-		return fmt.Sprintf("%s\n", markdown.(string))
+		markdownStr := markdown.(string)
+		for _, match := range re.FindAllString(markdownStr, -1) {
+			if fileName, err := ImgDownloader.Download(strings.TrimSuffix(match, ")")); err == nil {
+				markdownStr = strings.ReplaceAll(markdownStr, match, fileName+")")
+			}
+		}
+		return fmt.Sprintf("%s\n", markdownStr)
 	}
 	return ""
 }
