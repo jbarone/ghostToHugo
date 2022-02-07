@@ -135,6 +135,8 @@ func Test_cardImage(t *testing.T) {
 			"{{< figure src=\"test\" caption=\"caption\" >}}\n",
 		},
 	}
+
+	NewImgDownloader("", "", false)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := cardImage(tt.args.payload); got != tt.want {

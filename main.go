@@ -20,14 +20,16 @@ func usage() {
 func main() {
 
 	var (
-		path, loc, format     string
-		force, verbose, debug bool
+		path, loc, format, url          string
+		force, verbose, debug, insecure bool
 	)
 
 	flag.Usage = usage
 
 	flag.StringVarP(&path, "hugo", "p", "newhugosite",
 		"path to create the new hugo project")
+	flag.StringVarP(&url, "url", "u", "",
+		"base url of ghost blog to download images from example http://blog.example.com (default: \"\")")
 	flag.StringVarP(&loc, "location", "l", "",
 		"location to use for time conversions (default: local)")
 	flag.StringVarP(&format, "dateformat", "d", "2006-01-02 15:04:05",
@@ -38,6 +40,8 @@ func main() {
 		"print verbose logging output")
 	flag.BoolVarP(&debug, "debug", "", false,
 		"print verbose logging output")
+	flag.BoolVarP(&insecure, "insecure", "", false,
+		"do not check SSL cert of download content")
 
 	flag.Parse()
 
@@ -66,6 +70,8 @@ func main() {
 	}
 
 	c, err := ghosttohugo.New(opts...)
+	ghosttohugo.NewImgDownloader(path, url, insecure)
+
 	if err != nil {
 		jww.FATAL.Fatalf("Error initializing converter (%v)\n", err)
 	}

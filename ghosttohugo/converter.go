@@ -3,6 +3,7 @@ package ghosttohugo
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"strings"
@@ -128,6 +129,22 @@ func (c Converter) populatePost(p *post) {
 			}
 		}
 	}
+
+	if fileName, err := c.downloadImage(p.Image); err == nil {
+		p.Image = fileName
+	}
+	if fileName, err := c.downloadImage(p.FeaturedImage); err == nil {
+		p.FeaturedImage = fileName
+	}
+
+	//	fmt.Println(p.MobileDoc)
+}
+
+func (c Converter) downloadImage(img string) (string, error) {
+	if len(img) <= 0 {
+		return "", fmt.Errorf("no url surpplied")
+	}
+	return ImgDownloader.Download(img)
 }
 
 // Convert is the main function of this package. It takes an io.ReadSeeker

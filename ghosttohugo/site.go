@@ -42,6 +42,7 @@ func (c *Converter) createSite() error {
 	mkdir(c.path, "content")
 	mkdir(c.path, "archetypes")
 	mkdir(c.path, "static")
+	mkdir(c.path, "static/images")
 	mkdir(c.path, "data")
 	mkdir(c.path, "themes")
 

@@ -197,17 +197,21 @@ func cardImage(payload interface{}) string {
 		return ""
 	}
 
+	//fmt.Println("FOUND IMG CARD URL", src.(string))
+	img := src.(string)
+	if fileName, err := ImgDownloader.Download(src.(string)); err == nil {
+		img = fileName
+	}
 	if caption, ok := m["caption"]; ok {
 		return fmt.Sprintf(
 			"{{< figure src=\"%s\" caption=\"%s\" >}}\n",
-			stripContentFolder(src.(string)),
+			stripContentFolder(img),
 			caption,
 		)
 	}
-
 	return fmt.Sprintf(
 		"{{< figure src=\"%s\" >}}\n",
-		stripContentFolder(src.(string)),
+		stripContentFolder(img),
 	)
 }
 
