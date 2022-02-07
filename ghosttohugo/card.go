@@ -197,7 +197,6 @@ func cardImage(payload interface{}) string {
 		return ""
 	}
 
-	//fmt.Println("FOUND IMG CARD URL", src.(string))
 	img := src.(string)
 	if fileName, err := ImgDownloader.Download(src.(string)); err == nil {
 		img = fileName

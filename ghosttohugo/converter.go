@@ -137,7 +137,6 @@ func (c Converter) populatePost(p *post) {
 		p.FeaturedImage = fileName
 	}
 
-	//	fmt.Println(p.MobileDoc)
 }
 
 func (c Converter) downloadImage(img string) (string, error) {
